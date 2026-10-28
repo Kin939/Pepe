@@ -62,7 +62,7 @@ protectSpecialItems = true
 ./gradlew build
 ```
 
-Нужны JDK 25 и доступ к Maven NeoForge и Mojang. JAR: `build/libs/pepe-1.0.3.jar`.
+Нужны JDK 25 и доступ к Maven NeoForge и Mojang. JAR: `build/libs/pepe-1.0.4.jar`.
 GitHub Actions собирает и публикует JAR только после успешной компиляции.
 
 ## Проверка перед использованием на ценном инвентаре

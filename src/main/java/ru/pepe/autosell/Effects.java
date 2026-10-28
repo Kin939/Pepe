@@ -7,7 +7,6 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.resources.Identifier;
@@ -143,7 +142,7 @@ final class Effects {
             g.pose().popMatrix();
         }
         if (!FLYBYS.isEmpty() && mc.level != null) {
-            if (flyingVillager == null) flyingVillager = new Villager(EntityTypes.VILLAGER, mc.level);
+            if (flyingVillager == null) flyingVillager = GuiVillagerFactory.create(mc.level);
             for (Flyby f : FLYBYS) {
                 float progress = f.age / 36f;
                 int x = (int) (-140 + progress * (w + 280));
