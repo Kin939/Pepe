@@ -171,11 +171,11 @@ idea {
 }
 
 repositories { mavenCentral() }
-tasks.named("test") {
-    useJUnitPlatform()
-    // Minecraft registry tests need FML's junit launch target, not a raw JVM.
-    exclude '**/SellFilterTest.class'
-}
+// All tests run in testJunit, including the pure policy/combo tests. Adding
+// testframework installs FML's launcher service, so a second raw JVM test task
+// cannot run without the launch arguments supplied by NeoGradle's testJunit.
+tasks.named("test") { enabled = false }
+
 tasks.named("check") { dependsOn 'testJunit' }
 tasks.withType(Test).configureEach {
     testLogging { exceptionFormat = 'full' }
