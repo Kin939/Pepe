@@ -4,6 +4,7 @@ import java.util.List;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class SellFilter {
@@ -23,10 +24,16 @@ public final class SellFilter {
     public static boolean allowed(ItemStack stack) {
         if (stack.isEmpty()) return true;
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-        if (ALLOWLIST.get() != ITEMS.get().contains(id)) return false;
-        return !PROTECT.get() || !(stack.has(DataComponents.CUSTOM_NAME)
-                || stack.has(DataComponents.ENCHANTMENTS) || stack.has(DataComponents.STORED_ENCHANTMENTS)
+        return FilterPolicy.allowed(ALLOWLIST.get(), ITEMS.get().contains(id), PROTECT.get(), isSpecial(stack));
+    }
+
+    static boolean isSpecial(ItemStack stack) {
+        // ENCHANTMENTS is a default component of ordinary items too. Presence
+        // alone does NOT mean enchanted (pumpkins, wheat, etc. have EMPTY).
+        return stack.has(DataComponents.CUSTOM_NAME)
+                || !stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY).isEmpty()
+                || !stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).isEmpty()
                 || stack.has(DataComponents.CONTAINER) || stack.has(DataComponents.BUNDLE_CONTENTS)
-                || stack.isDamaged());
+                || stack.isDamaged();
     }
 }

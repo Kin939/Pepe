@@ -39,5 +39,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="pepe-1.0.0-build-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" build/libs/pepe-1.0.0.jar --target "$GITHUB_SHA" --title "Pepe Auto Sell 1.0.0 (build ${GITHUB_RUN_NUMBER})" --notes-file RELEASE_NOTES.md
+          VERSION=$(sed -n 's/^mod_version=//p' gradle.properties)
+          TAG="pepe-${VERSION}-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "build/libs/pepe-${VERSION}.jar" --target "$GITHUB_SHA" --title "Pepe Auto Sell ${VERSION} (build ${GITHUB_RUN_NUMBER})" --notes-file RELEASE_NOTES.md
