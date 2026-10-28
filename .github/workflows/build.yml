@@ -23,6 +23,7 @@ jobs:
       - name: Report build diagnostics
         if: failure()
         run: |
+          ./gradlew --no-daemon inspectMinecraftApi >> build-output.log 2>&1 || true
           python3 - <<'PYTHON'
           from pathlib import Path
           p = Path('build-output.log')

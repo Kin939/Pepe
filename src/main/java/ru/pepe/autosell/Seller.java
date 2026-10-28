@@ -127,7 +127,7 @@ final class Seller {
     private void await(Phase next) { phase = next; state = menu.getStateId(); wait = 0; }
     private void click(int slot, ContainerInput type) {
         var mc = Minecraft.getInstance();
-        mc.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, type, mc.player);
+        mc.gameMode.handleContainerInput(menu.containerId, slot, 0, type, mc.player);
     }
     void close(boolean error) {
         MerchantMenu old = menu;

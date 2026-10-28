@@ -167,3 +167,13 @@ idea {
 
 repositories { mavenCentral() }
 tasks.named("test") { useJUnitPlatform() }
+
+// Diagnostics for API migrations; this task does not modify game or mod files.
+tasks.register('inspectMinecraftApi') {
+    doLast {
+        def result = new ProcessBuilder('javap', '-classpath', sourceSets.main.compileClasspath.asPath,
+                'net.minecraft.client.multiplayer.MultiPlayerGameMode').redirectErrorStream(true).start()
+        println result.inputStream.getText('UTF-8')
+        if (result.waitFor() != 0) throw new GradleException('javap failed')
+    }
+}
