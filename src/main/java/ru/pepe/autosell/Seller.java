@@ -102,21 +102,13 @@ final class Seller {
         if (offer.isOutOfStock() || !offer.getResult().is(Items.EMERALD)) return false;
         ItemStack a = offer.getCostA(), b = offer.getCostB();
         if (a.is(Items.EMERALD) || b.is(Items.EMERALD) || !SellFilter.allowed(a) || !SellFilter.allowed(b)) return false;
-        // Vanilla autofill searches the entire inventory: conservatively reject an offer if
-        // a protected item of either input type exists, rather than risk selling it.
-        int haveA = 0, haveB = 0;
+        var inputs = new java.util.ArrayList<ItemStack>();
         for (int i = 0; i < menu.slots.size(); i++) {
-            if (i == 2) continue;
-            ItemStack stack = menu.getSlot(i).getItem();
-            if (stack.is(a.getItem()) || (!b.isEmpty() && stack.is(b.getItem()))) {
-                if (!SellFilter.allowed(stack)) return false;
-            }
-            if (ItemStack.isSameItemSameComponents(stack, a)) haveA += stack.getCount();
-            if (!b.isEmpty() && ItemStack.isSameItemSameComponents(stack, b)) haveB += stack.getCount();
+            if (i != 2) inputs.add(menu.getSlot(i).getItem());
         }
-        if (!b.isEmpty() && ItemStack.isSameItemSameComponents(a, b)) return haveA >= a.getCount() + b.getCount();
-        return haveA >= a.getCount() && haveB >= b.getCount();
+        return TradeInputs.canPay(a, b, inputs, SellFilter::allowed);
     }
+
     private int destination(ItemStack result) {
         for (int i = 3; i < menu.slots.size(); i++) {
             ItemStack stack = menu.getSlot(i).getItem();
