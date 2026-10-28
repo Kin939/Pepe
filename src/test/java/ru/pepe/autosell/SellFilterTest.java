@@ -25,6 +25,7 @@ class SellFilterTest {
         ItemStack stack = new ItemStack(Items.PUMPKIN);
         stack.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
         stack.set(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+        assertTrue(stack.has(DataComponents.ENCHANTMENTS));
         assertFalse(SellFilter.isSpecial(stack));
     }
     @Test void namedItemsStayProtected() {
