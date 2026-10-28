@@ -13,6 +13,7 @@ final class Seller {
     private enum Phase { FIND, FILL, SETTLE }
     private MerchantMenu menu;
     private Phase phase;
+    private VillagerVisit visit;
     private int age, wait, offerIndex, beforeEmeralds, outputPerTrade, completed;
     private final java.util.Set<Integer> exhausted = new java.util.HashSet<>();
     boolean active() { return menu != null; }
@@ -20,6 +21,7 @@ final class Seller {
     void open(MerchantMenu next) {
         // A second interaction may replace a container; do not close the new one.
         menu = next;
+        visit = new VillagerVisit();
         phase = Phase.FIND;
         age = wait = completed = 0;
         offerIndex = -1;
@@ -50,6 +52,7 @@ final class Seller {
                     return;
                 }
             }
+            if (visit.finish()) Effects.villagerFinished();
             close(completed == 0);
             return;
         }
@@ -72,7 +75,8 @@ final class Seller {
             if (gained > 0) {
                 int trades = BatchResult.tradeCount(gained, outputPerTrade);
                 completed += trades;
-                Effects.sales(gained, trades);
+                visit.sold();
+                Effects.sales(gained);
             } else {
                 exhausted.add(offerIndex);
             }

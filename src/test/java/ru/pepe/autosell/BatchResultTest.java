@@ -12,7 +12,7 @@ class BatchResultTest {
         assertEquals(0, BatchResult.tradeCount(0, 1));
         assertEquals(0, BatchResult.tradeCount(12, 0));
     }
-    @Test void allTwelveComboStepsSurviveInstantBatch() {
+    @Test void allTwelveSuccessfulVisitsSurviveInstantQueue() {
         ComboPlayback playback = new ComboPlayback();
         playback.add(12);
         var result = new java.util.ArrayList<Integer>();

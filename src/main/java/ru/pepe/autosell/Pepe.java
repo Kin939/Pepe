@@ -55,6 +55,7 @@ public final class Pepe {
         while (toggle.consumeClick()) {
             if (enabled) disable(true);
             else {
+                Effects.clear();
                 enabled = true;
                 Effects.startMusic();
                 mc.player.sendSystemMessage(Component.translatable("message.pepe.on"));

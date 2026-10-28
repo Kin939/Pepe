@@ -1,10 +1,10 @@
 package ru.pepe.autosell;
 
-/** Presentation queue: never delays selling, never collapses twelve trades to one combo. */
+/** Presentation queue: never delays selling, each queued step represents one completed profitable villager visit. */
 final class ComboPlayback {
     private final ComboCounter counter = new ComboCounter();
     private int pending, cooldown;
-    void add(int trades) { if (trades > 0) pending = Math.addExact(pending, trades); }
+    void add(int visits) { if (visits > 0) pending = Math.addExact(pending, visits); }
     int tick() {
         if (cooldown > 0) { cooldown--; return 0; }
         if (pending == 0) return 0;

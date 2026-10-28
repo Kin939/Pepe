@@ -94,5 +94,10 @@
         "stream": false
       }
     ]
+  },
+  "musor_drop": {
+    "sounds": [
+      "pepe:musor_drop"
+    ]
   }
 }

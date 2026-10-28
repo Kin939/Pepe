@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
@@ -18,6 +21,10 @@ final class Effects {
     private static final Random RNG = new Random();
     private static final List<Toast> TOASTS = new ArrayList<>();
     private static final List<Drop> DROPS = new ArrayList<>();
+    private static final List<Flyby> FLYBYS = new ArrayList<>();
+    private static final SessionEarnings EARNINGS = new SessionEarnings();
+    private static Villager flyingVillager;
+    private static int pendingFlybys, flybyCooldown, earningsPulse;
     private static final List<Clip> CLIPS = new ArrayList<>();
     private static final ItemStack EMERALD = new ItemStack(Items.EMERALD);
     private static Clip music;
@@ -54,14 +61,16 @@ final class Effects {
         if (music != null) Minecraft.getInstance().getSoundManager().stop(music);
         music = null;
     }
-    static void sales(int emeralds, int trades) {
+    static void sales(int emeralds) {
         TOASTS.add(new Toast(emeralds));
-        COMBO.add(trades);
+        pendingFlybys += EARNINGS.add(emeralds);
+        earningsPulse = 20;
+        play("cash");
     }
+    static void villagerFinished() { COMBO.add(1); }
     private static void comboStep(int step) {
         shownCombo = step;
         comboAge = 0;
-        play("cash");
         play("combo_" + shownCombo);
         if (shownCombo == 8) {
             for (int i = 0; i < 500; i++) DROPS.add(new Drop());
@@ -70,6 +79,15 @@ final class Effects {
     static void tick() {
         clock++;
         comboAge++;
+        if (earningsPulse > 0) earningsPulse--;
+        if (flybyCooldown > 0) flybyCooldown--;
+        if (pendingFlybys > 0 && flybyCooldown == 0) {
+            pendingFlybys--;
+            flybyCooldown = 22;
+            FLYBYS.add(new Flyby());
+            play("musor_drop");
+        }
+        FLYBYS.removeIf(f -> ++f.age > 36);
         int step = COMBO.tick();
         if (step != 0) comboStep(step);
         TOASTS.removeIf(t -> ++t.age > 65);
@@ -78,6 +96,10 @@ final class Effects {
     }
     static void clear() {
         COMBO.clear();
+        EARNINGS.reset();
+        pendingFlybys = flybyCooldown = earningsPulse = 0;
+        FLYBYS.clear();
+        flyingVillager = null;
         shownCombo = comboAge = 0;
         TOASTS.clear();
         DROPS.clear();
@@ -97,6 +119,13 @@ final class Effects {
             g.item(EMERALD, x - 22, y - 4);
             g.text(mc.font, text, x, y, (alpha << 24) | 0x6BFFA0, true);
         }
+        String earned = "Emeralds: " + EARNINGS.total();
+        int panelWidth = mc.font.width(earned) + 42;
+        int panelX = w - panelWidth - 10;
+        int panelY = h - 35 - earningsPulse / 5;
+        g.fill(panelX, panelY, w - 10, panelY + 25, 0xC0182922);
+        g.item(EMERALD, panelX + 5, panelY + 4);
+        g.text(mc.font, earned, panelX + 27, panelY + 8, 0xFF7CFFAC, true);
         if (shownCombo > 0 && comboAge < 50) {
             String text = "Combo " + shownCombo;
             g.pose().pushMatrix();
@@ -112,6 +141,17 @@ final class Effects {
                 x += mc.font.width(ch);
             }
             g.pose().popMatrix();
+        }
+        if (!FLYBYS.isEmpty() && mc.level != null) {
+            if (flyingVillager == null) flyingVillager = new Villager(EntityType.VILLAGER, mc.level);
+            for (Flyby f : FLYBYS) {
+                float progress = f.age / 36f;
+                int x = (int) (-140 + progress * (w + 280));
+                int y = (int) (h * f.height + Math.sin(progress * Math.PI * 2) * h * 0.12);
+                // A GUI-only entity: never inserted into the level or sent to the server.
+                InventoryScreen.renderEntityInInventoryFollowsAngle(g, x - 65, y - 90, x + 65, y + 90,
+                        65, 0, f.age * 0.9f, 0, flyingVillager);
+            }
         }
         for (Drop d : DROPS) {
             if (d.age < d.delay) continue;
@@ -131,11 +171,15 @@ final class Effects {
         int age;
         Toast(int amount) { this.amount = amount; }
     }
+    private static final class Flyby {
+        final float height = 0.25f + RNG.nextFloat() * 0.5f;
+        int age;
+    }
     private static final class Drop {
         final float x = RNG.nextFloat(), phase = RNG.nextFloat() * 6.28f;
-        final float speed = 2 + RNG.nextFloat() * 5, spin = (RNG.nextFloat() - 0.5f) * 0.18f;
+        final float speed = 3 * (2 + RNG.nextFloat() * 5), spin = (RNG.nextFloat() - 0.5f) * 0.18f;
         final float scale = 0.5f + RNG.nextFloat() * 1.2f;
-        final int delay = RNG.nextInt(65), life = delay + 180;
+        final int delay = RNG.nextInt(65), life = delay + 60;
         int age;
     }
 }
