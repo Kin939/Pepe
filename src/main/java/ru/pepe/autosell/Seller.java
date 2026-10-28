@@ -13,7 +13,7 @@ final class Seller {
     private enum Phase { FIND, FILL, SETTLE }
     private MerchantMenu menu;
     private Phase phase;
-    private int age, wait, state, offerIndex, beforeEmeralds, outputPerTrade, completed;
+    private int age, wait, offerIndex, beforeEmeralds, outputPerTrade, completed;
     private final java.util.Set<Integer> exhausted = new java.util.HashSet<>();
     boolean active() { return menu != null; }
 
@@ -54,13 +54,12 @@ final class Seller {
             return;
         }
         ++wait;
-        // Wait for server menu synchronization, never spam a stale result slot.
-        if (menu.getStateId() == state) {
-            if (wait > 60) close(completed == 0);
-            return;
-        }
+        // A correctly predicted vanilla click need not cause any slot update
+        // back from the server. Waiting for stateId to change deadlocks successful
+        // trades and prevents the earnings/combo handler from ever running.
         if (phase == Phase.FILL) {
             MerchantOffer offer = menu.getOffers().get(offerIndex);
+            if (!menu.getSlot(2).hasItem() && !offer.isOutOfStock() && wait < 60) return;
             if (offer.isOutOfStock() || !eligible(offer) || !menu.getSlot(2).hasItem() || !fits(offer.getResult())) {
                 exhausted.add(offerIndex);
                 phase = Phase.FIND;
@@ -126,7 +125,7 @@ final class Seller {
         }
         return count;
     }
-    private void await(Phase next) { phase = next; state = menu.getStateId(); wait = 0; }
+    private void await(Phase next) { phase = next; wait = 0; }
     private void click(int slot, ContainerInput type) {
         var mc = Minecraft.getInstance();
         mc.gameMode.handleContainerInput(menu.containerId, slot, 0, type, mc.player);
