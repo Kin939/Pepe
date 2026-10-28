@@ -1,5 +1,6 @@
 {
   "key.pepe.toggle": "Переключить автопродажу",
   "message.pepe.on": "Автопродажа ВКЛ — ПКМ по жителю",
-  "message.pepe.off": "Автопродажа ВЫКЛ"
+  "message.pepe.off": "Автопродажа ВЫКЛ",
+  "hud.pepe.earned": "Заработано: %s"
 }
