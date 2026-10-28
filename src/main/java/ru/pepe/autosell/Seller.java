@@ -2,7 +2,7 @@ package ru.pepe.autosell;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -70,7 +70,7 @@ final class Seller {
             Effects.sale(gained);
             int target = destination(carried);
             if (target < 0) { close(false); return; } // vanilla close returns the cursor stack
-            click(target, ClickType.PICKUP);
+            click(target, ContainerInput.PICKUP);
             await(Phase.STORE);
         } else {
             if (!menu.getCarried().isEmpty()) { close(false); return; }
@@ -84,7 +84,7 @@ final class Seller {
 
     private void take() {
         beforeEmeralds = emeralds();
-        click(2, ClickType.PICKUP); // Exactly ONE trade, not a shift-click bulk sale.
+        click(2, ContainerInput.PICKUP); // Exactly ONE trade, not a shift-click bulk sale.
         await(Phase.TAKE);
     }
 
@@ -125,7 +125,7 @@ final class Seller {
         return count;
     }
     private void await(Phase next) { phase = next; state = menu.getStateId(); wait = 0; }
-    private void click(int slot, ClickType type) {
+    private void click(int slot, ContainerInput type) {
         var mc = Minecraft.getInstance();
         mc.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, type, mc.player);
     }

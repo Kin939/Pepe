@@ -16,12 +16,12 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.fml.config.ModConfig;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 @Mod(value = Pepe.ID, dist = Dist.CLIENT)
 public final class Pepe {
     public static final String ID = "pepe";
-    private final KeyMapping toggle = new KeyMapping("key.pepe.toggle", GLFW.GLFW_KEY_C, KeyMapping.Category.MISC);
+    private final KeyMapping toggle = new KeyMapping("key.pepe.toggle", InputConstants.KEY_C, KeyMapping.Category.MISC);
     private final Seller seller = new Seller();
     private boolean enabled;
 
@@ -57,7 +57,7 @@ public final class Pepe {
             else {
                 enabled = true;
                 Effects.startMusic();
-                mc.player.displayClientMessage(Component.translatable("message.pepe.on"), true);
+                mc.player.sendSystemMessage(Component.translatable("message.pepe.on"));
             }
         }
         if (enabled) {
@@ -73,7 +73,7 @@ public final class Pepe {
         Effects.stopMusic();
         if (sound) {
             Effects.play("off");
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("message.pepe.off"), true);
+            Minecraft.getInstance().player.sendSystemMessage(Component.translatable("message.pepe.off"));
         }
     }
 
