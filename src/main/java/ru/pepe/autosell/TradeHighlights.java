@@ -6,11 +6,11 @@ import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.minecraft.world.phys.EntityHitResult;
 
 /** Serialized, read-only vanilla trade probes. No item clicks or artificial restocks. */
 final class TradeHighlights {
@@ -29,16 +29,20 @@ final class TradeHighlights {
     }
     UUID manualTarget() { return manualTarget; }
 
-    void onInteract(PlayerInteractEvent.EntityInteract event) {
+    void onInteract(InputEvent.InteractionKeyMappingTriggered event) {
         var mc = Minecraft.getInstance();
-        if (!enabled || event.getEntity() != mc.player || !(event.getTarget() instanceof Villager villager)) return;
+        if (!enabled || !event.isUseItem() || mc.player == null
+                || !(mc.hitResult instanceof EntityHitResult hit) || !(hit.getEntity() instanceof Villager villager)) return;
         if (pendingProbe != null) {
             // Do not interleave two unidentified open-menu responses. Replay the
             // user's request as soon as the read-only probe finishes.
             queuedManual = villager;
             event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-        } else manualTarget = villager.getUUID();
+            event.setSwingHand(false);
+        } else {
+            manualTarget = villager.getUUID();
+            nextRequest = tick + 60; // Give this manual open response exclusive ownership.
+        }
     }
 
     boolean acceptProbe(MerchantMenu menu) {
@@ -84,7 +88,7 @@ final class TradeHighlights {
                 manualTarget = target.getUUID();
                 mc.getConnection().send(ServerboundInteractPacket.createInteractionPacket(target,
                         mc.player.isShiftKeyDown(), InteractionHand.MAIN_HAND));
-                nextRequest = tick + 40;
+                nextRequest = tick + 60;
             }
             return;
         }
