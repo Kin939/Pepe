@@ -21,7 +21,7 @@ final class Effects {
     private static final List<Clip> CLIPS = new ArrayList<>();
     private static final ItemStack EMERALD = new ItemStack(Items.EMERALD);
     private static Clip music;
-    private static final ComboCounter COMBO = new ComboCounter();
+    private static final ComboPlayback COMBO = new ComboPlayback();
     private static int shownCombo, comboAge;
     private static long clock;
 
@@ -54,10 +54,13 @@ final class Effects {
         if (music != null) Minecraft.getInstance().getSoundManager().stop(music);
         music = null;
     }
-    static void sale(int emeralds) {
-        shownCombo = COMBO.next();
-        comboAge = 0;
+    static void sales(int emeralds, int trades) {
         TOASTS.add(new Toast(emeralds));
+        COMBO.add(trades);
+    }
+    private static void comboStep(int step) {
+        shownCombo = step;
+        comboAge = 0;
         play("cash");
         play("combo_" + shownCombo);
         if (shownCombo == 8) {
@@ -67,12 +70,14 @@ final class Effects {
     static void tick() {
         clock++;
         comboAge++;
+        int step = COMBO.tick();
+        if (step != 0) comboStep(step);
         TOASTS.removeIf(t -> ++t.age > 65);
         DROPS.removeIf(d -> ++d.age > d.life);
         CLIPS.removeIf(c -> !Minecraft.getInstance().getSoundManager().isActive(c));
     }
     static void clear() {
-        COMBO.reset();
+        COMBO.clear();
         shownCombo = comboAge = 0;
         TOASTS.clear();
         DROPS.clear();

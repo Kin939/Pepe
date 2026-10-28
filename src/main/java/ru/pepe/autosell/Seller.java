@@ -10,10 +10,10 @@ import net.minecraft.world.item.trading.MerchantOffer;
 
 /** Only vanilla menu operations; no invented trades, prices, stock or server bypass. */
 final class Seller {
-    private enum Phase { FIND, FILL, TAKE, STORE }
+    private enum Phase { FIND, FILL, SETTLE }
     private MerchantMenu menu;
     private Phase phase;
-    private int age, wait, state, offerIndex, beforeEmeralds, completed;
+    private int age, wait, state, offerIndex, beforeEmeralds, outputPerTrade, completed;
     private final java.util.Set<Integer> exhausted = new java.util.HashSet<>();
     boolean active() { return menu != null; }
 
@@ -22,6 +22,7 @@ final class Seller {
         menu = next;
         phase = Phase.FIND;
         age = wait = completed = 0;
+        offerIndex = -1;
         exhausted.clear();
     }
 
@@ -36,6 +37,11 @@ final class Seller {
             for (int i = 0; i < menu.getOffers().size(); i++) {
                 MerchantOffer offer = menu.getOffers().get(i);
                 if (!exhausted.contains(i) && eligible(offer) && fits(offer.getResult())) {
+                    if (offerIndex == i && menu.getSlot(2).hasItem()
+                            && menu.getOffers().get(i).satisfiedBy(menu.getSlot(0).getItem(), menu.getSlot(1).getItem())) {
+                        take();
+                        return;
+                    }
                     offerIndex = i;
                     menu.setSelectionHint(i);
                     menu.tryMoveItems(i);
@@ -47,7 +53,7 @@ final class Seller {
             close(completed == 0);
             return;
         }
-        if (++wait < 4) return;
+        ++wait;
         // Wait for server menu synchronization, never spam a stale result slot.
         if (menu.getStateId() == state) {
             if (wait > 60) close(completed == 0);
@@ -62,30 +68,26 @@ final class Seller {
             }
             if (!menu.getCarried().isEmpty()) { close(false); return; }
             take();
-        } else if (phase == Phase.TAKE) {
-            ItemStack carried = menu.getCarried();
-            int gained = emeralds() - beforeEmeralds;
-            if (!carried.is(Items.EMERALD) || gained <= 0) { close(completed == 0); return; }
-            completed++;
-            Effects.sale(gained);
-            int target = destination(carried);
-            if (target < 0) { close(false); return; } // vanilla close returns the cursor stack
-            click(target, ContainerInput.PICKUP);
-            await(Phase.STORE);
         } else {
-            if (!menu.getCarried().isEmpty()) { close(false); return; }
-            MerchantOffer offer = menu.getOffers().get(offerIndex);
-            // Autofill leaves the remaining input stack in place. Do not wait for a
-            // nonexistent update when selecting an already filled trade again.
-            if (eligible(offer) && menu.getSlot(2).hasItem() && fits(offer.getResult())) take();
-            else phase = Phase.FIND;
+            int gained = emeralds() - beforeEmeralds;
+            if (gained > 0) {
+                int trades = BatchResult.tradeCount(gained, outputPerTrade);
+                completed += trades;
+                Effects.sales(gained, trades);
+            } else {
+                exhausted.add(offerIndex);
+            }
+            // A quick-move consumes the filled input stacks. Refill and continue
+            // the SAME villager session; do not require another right-click.
+            phase = Phase.FIND;
         }
     }
 
     private void take() {
         beforeEmeralds = emeralds();
-        click(2, ContainerInput.PICKUP); // Exactly ONE trade, not a shift-click bulk sale.
-        await(Phase.TAKE);
+        outputPerTrade = menu.getOffers().get(offerIndex).getResult().getCount();
+        click(2, ContainerInput.QUICK_MOVE); // Vanilla bulk-trade, directly into inventory.
+        await(Phase.SETTLE);
     }
 
     private boolean eligible(MerchantOffer offer) {
