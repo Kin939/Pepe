@@ -9,13 +9,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: temurin
       - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew && ./gradlew --no-daemon build
+      - name: Compile and test
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon build 2>&1 | tee build-output.log
+      - name: Report build diagnostics
+        if: failure()
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          p = Path('build-output.log')
+          text = p.read_text()[-45000:] if p.exists() else 'Build log unavailable'
+          text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=Gradle diagnostics::' + text)
+          PYTHON
       - uses: actions/upload-artifact@v4
         with:
           name: pepe-neoforge-26.3
