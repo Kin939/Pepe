@@ -82,14 +82,14 @@ final class TradeHighlights {
             }
             return;
         }
-        if (selling || mc.gui.getScreen() != null || mc.player.containerMenu != mc.player.inventoryMenu) return;
+        if (selling || mc.gui.screen() != null || mc.player.containerMenu != mc.player.inventoryMenu) return;
         if (queuedManual != null) {
             Villager target = queuedManual;
             queuedManual = null;
             if (reachable(target)) {
                 manualTarget = target.getUUID();
-                mc.getConnection().send(ServerboundInteractPacket.createInteractionPacket(target,
-                        mc.player.isShiftKeyDown(), InteractionHand.MAIN_HAND));
+                mc.getConnection().send(new ServerboundInteractPacket(target.getId(), InteractionHand.MAIN_HAND,
+                        null, mc.player.isShiftKeyDown()));
                 nextRequest = tick + 60;
             }
             return;
@@ -111,7 +111,7 @@ final class TradeHighlights {
         probeAge = 0;
         nextRequest = tick + 30; // At most one request per 1.5 seconds globally.
         // Empty OFF_HAND avoids applying a held name tag or another usable item.
-        mc.getConnection().send(ServerboundInteractPacket.createInteractionPacket(chosen, false, InteractionHand.OFF_HAND));
+        mc.getConnection().send(new ServerboundInteractPacket(chosen.getId(), InteractionHand.OFF_HAND, null, false));
     }
 
     private boolean reachable(Villager target) {
