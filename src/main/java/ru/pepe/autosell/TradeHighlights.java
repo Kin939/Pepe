@@ -89,7 +89,7 @@ final class TradeHighlights {
             if (reachable(target)) {
                 manualTarget = target.getUUID();
                 mc.getConnection().send(new ServerboundInteractPacket(target.getId(), InteractionHand.MAIN_HAND,
-                        null, mc.player.isShiftKeyDown()));
+                        target.getBoundingBox().getCenter(), mc.player.isShiftKeyDown()));
                 nextRequest = tick + 60;
             }
             return;
@@ -111,7 +111,7 @@ final class TradeHighlights {
         probeAge = 0;
         nextRequest = tick + 30; // At most one request per 1.5 seconds globally.
         // Empty OFF_HAND avoids applying a held name tag or another usable item.
-        mc.getConnection().send(new ServerboundInteractPacket(chosen.getId(), InteractionHand.OFF_HAND, null, false));
+        mc.getConnection().send(new ServerboundInteractPacket(chosen.getId(), InteractionHand.OFF_HAND, chosen.getBoundingBox().getCenter(), false));
     }
 
     private boolean reachable(Villager target) {
