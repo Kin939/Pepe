@@ -89,6 +89,7 @@ configurations {
 dependencies {
     testImplementation platform("org.junit:junit-bom:5.11.4")
     testImplementation "org.junit.jupiter:junit-jupiter"
+    testImplementation "net.neoforged:testframework:${neo_version}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     // Specify the version of Minecraft to use.
     // Depending on the plugin applied there are several options. We will assume you applied the userdev plugin as shown above.
