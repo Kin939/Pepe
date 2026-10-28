@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
@@ -22,7 +21,7 @@ final class Effects {
     private static final List<Drop> DROPS = new ArrayList<>();
     private static final List<Flyby> FLYBYS = new ArrayList<>();
     private static final SessionEarnings EARNINGS = new SessionEarnings();
-    private static Villager flyingVillager;
+    private static final Identifier VILLAGER_SPRITE = Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/villager_flyby.png");
     private static int pendingFlybys, flybyCooldown, earningsPulse;
     private static final List<Clip> CLIPS = new ArrayList<>();
     private static final ItemStack EMERALD = new ItemStack(Items.EMERALD);
@@ -86,7 +85,7 @@ final class Effects {
             FLYBYS.add(new Flyby());
             play("musor_drop");
         }
-        FLYBYS.removeIf(f -> ++f.age > 36);
+        FLYBYS.removeIf(f -> ++f.age > FlybyMotion.LIFETIME);
         int step = COMBO.tick();
         if (step != 0) comboStep(step);
         TOASTS.removeIf(t -> ++t.age > 65);
@@ -98,7 +97,6 @@ final class Effects {
         EARNINGS.reset();
         pendingFlybys = flybyCooldown = earningsPulse = 0;
         FLYBYS.clear();
-        flyingVillager = null;
         shownCombo = comboAge = 0;
         TOASTS.clear();
         DROPS.clear();
@@ -141,15 +139,20 @@ final class Effects {
             }
             g.pose().popMatrix();
         }
-        if (!FLYBYS.isEmpty() && mc.level != null) {
-            if (flyingVillager == null) flyingVillager = GuiVillagerFactory.create(mc.level);
-            for (Flyby f : FLYBYS) {
-                float progress = f.age / 36f;
-                int x = (int) (-140 + progress * (w + 280));
-                int y = (int) (h * f.height + Math.sin(progress * Math.PI * 2) * h * 0.12);
-                // A GUI-only entity: never inserted into the level or sent to the server.
-                InventoryScreen.renderEntityInInventoryFollowsAngle(g, x - 65, y - 90, x + 65, y + 90,
-                        65, 0, f.age * 0.9f, 0, flyingVillager);
+        for (Flyby f : FLYBYS) {
+            float progress = FlybyMotion.progress(f.age);
+            float x = FlybyMotion.x(f.age, w);
+            float y = (float) (h * f.height + Math.sin(progress * Math.PI * 2) * h * 0.12);
+            // Only a normal HUD texture: no Villager, world, entity ID, render
+            // state extraction, InventoryScreen or mob-renderer mixins involved.
+            g.pose().pushMatrix();
+            try {
+                g.pose().translate(x, y);
+                g.pose().rotate(FlybyMotion.angle(f.age));
+                g.pose().scale(2.5f, 2.5f);
+                g.blit(RenderPipelines.GUI_TEXTURED, VILLAGER_SPRITE, -16, -32, 0, 0, 32, 64, 32, 64);
+            } finally {
+                g.pose().popMatrix();
             }
         }
         for (Drop d : DROPS) {
