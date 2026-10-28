@@ -12,8 +12,12 @@ final class GuiVillagerFactory {
 
     static Villager create(Level level) {
         Villager villager = new Villager(EntityTypes.VILLAGER, level);
-        // Since 26.3 constructors no longer assign an ID. The renderer calls
-        // getId(), even for an entity which exists exclusively in a GUI.
+        return prepareForRendering(villager);
+    }
+
+    static Villager prepareForRendering(Villager villager) {
+        // A client level does not assign IDs to standalone entities. The
+        // renderer calls getId() even when the entity only exists in a GUI.
         villager.setId(RENDER_ID);
         return villager;
     }
