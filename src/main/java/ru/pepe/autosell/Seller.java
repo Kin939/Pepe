@@ -11,6 +11,9 @@ import net.minecraft.world.item.trading.MerchantOffer;
 /** Only vanilla menu operations; no invented trades, prices, stock or server bypass. */
 final class Seller {
     private enum Phase { FIND, FILL, SETTLE }
+    private final TradeHighlights highlights;
+    private java.util.UUID merchantId;
+    Seller(TradeHighlights highlights) { this.highlights = highlights; }
     private MerchantMenu menu;
     private Phase phase;
     private VillagerVisit visit;
@@ -18,9 +21,10 @@ final class Seller {
     private final java.util.Set<Integer> exhausted = new java.util.HashSet<>();
     boolean active() { return menu != null; }
 
-    void open(MerchantMenu next) {
+    void open(MerchantMenu next, java.util.UUID id) {
         // A second interaction may replace a container; do not close the new one.
         menu = next;
+        merchantId = id;
         visit = new VillagerVisit();
         phase = Phase.FIND;
         age = wait = completed = 0;
@@ -32,6 +36,7 @@ final class Seller {
         if (menu == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.gameMode == null || mc.player.containerMenu != menu) { menu = null; return; }
+        highlights.observe(merchantId, menu);
         if (++age > 1200) { close(completed == 0); return; }
         if (phase == Phase.FIND) {
             // Offers arrive in a separate server packet after the open-screen packet.
@@ -136,7 +141,9 @@ final class Seller {
     }
     void close(boolean error) {
         MerchantMenu old = menu;
+        if (old != null) highlights.observe(merchantId, old);
         menu = null;
+        merchantId = null;
         var player = Minecraft.getInstance().player;
         if (old != null && player != null && player.containerMenu == old) player.closeContainer();
         if (error) Effects.play("error");
