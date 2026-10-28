@@ -61,6 +61,10 @@ runs {
         modSource project.sourceSets.main
     }
 
+    junit {
+        unitTestSource project.sourceSets.test
+    }
+
     client {
         // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -166,12 +170,21 @@ idea {
 }
 
 repositories { mavenCentral() }
-tasks.named("test") { useJUnitPlatform() }
+tasks.named("test") {
+    useJUnitPlatform()
+    // Minecraft registry tests need FML's junit launch target, not a raw JVM.
+    exclude '**/SellFilterTest.class'
+}
+tasks.named("check") { dependsOn 'testJunit' }
+tasks.withType(Test).configureEach {
+    testLogging { exceptionFormat = 'full' }
+}
 
 // Diagnostics for API migrations; this task does not modify game or mod files.
+def apiClasspath = sourceSets.main.compileClasspath
 tasks.register('inspectMinecraftApi') {
     doLast {
-        def result = new ProcessBuilder('javap', '-classpath', sourceSets.main.compileClasspath.asPath,
+        def result = new ProcessBuilder('javap', '-classpath', apiClasspath.asPath,
                 'net.minecraft.client.multiplayer.MultiPlayerGameMode').redirectErrorStream(true).start()
         println result.inputStream.getText('UTF-8')
         if (result.waitFor() != 0) throw new GradleException('javap failed')

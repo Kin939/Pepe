@@ -23,15 +23,15 @@ jobs:
       - name: Report build diagnostics
         if: failure()
         run: |
-          ./gradlew --no-daemon inspectMinecraftApi >> build-output.log 2>&1 || true
           python3 - <<'PYTHON'
           from pathlib import Path
           p = Path('build-output.log')
           text = p.read_text()[-30000:] if p.exists() else 'Build log unavailable'
-          for report in Path('build/test-results/test').glob('*.xml'):
+          for report in Path('build/test-results').glob('*/*.xml'):
               content = report.read_text()
               if '<failure' in content or '<error' in content:
-                  text += '\n' + content[-18000:]
+                  excerpt = content[:7500].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print('::error title=Regression test failure::' + excerpt)
           text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
           print('::error title=Gradle diagnostics::' + text)
           PYTHON
