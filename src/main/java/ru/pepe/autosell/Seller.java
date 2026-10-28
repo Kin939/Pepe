@@ -61,9 +61,7 @@ final class Seller {
                 return;
             }
             if (!menu.getCarried().isEmpty()) { close(false); return; }
-            beforeEmeralds = emeralds();
-            click(2, ClickType.PICKUP); // Exactly ONE trade, not a shift-click bulk sale.
-            await(Phase.TAKE);
+            take();
         } else if (phase == Phase.TAKE) {
             ItemStack carried = menu.getCarried();
             int gained = emeralds() - beforeEmeralds;
@@ -76,9 +74,18 @@ final class Seller {
             await(Phase.STORE);
         } else {
             if (!menu.getCarried().isEmpty()) { close(false); return; }
-            // Refill/choose again so stock, discounts and inventory are rechecked each time.
-            phase = Phase.FIND;
+            MerchantOffer offer = menu.getOffers().get(offerIndex);
+            // Autofill leaves the remaining input stack in place. Do not wait for a
+            // nonexistent update when selecting an already filled trade again.
+            if (eligible(offer) && menu.getSlot(2).hasItem() && fits(offer.getResult())) take();
+            else phase = Phase.FIND;
         }
+    }
+
+    private void take() {
+        beforeEmeralds = emeralds();
+        click(2, ClickType.PICKUP); // Exactly ONE trade, not a shift-click bulk sale.
+        await(Phase.TAKE);
     }
 
     private boolean eligible(MerchantOffer offer) {

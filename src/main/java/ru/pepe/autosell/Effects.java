@@ -21,7 +21,8 @@ final class Effects {
     private static final List<Clip> CLIPS = new ArrayList<>();
     private static final ItemStack EMERALD = new ItemStack(Items.EMERALD);
     private static Clip music;
-    private static int combo, shownCombo, comboAge;
+    private static final ComboCounter COMBO = new ComboCounter();
+    private static int shownCombo, comboAge;
     private static long clock;
 
     private static final class Clip extends AbstractTickableSoundInstance {
@@ -54,14 +55,13 @@ final class Effects {
         music = null;
     }
     static void sale(int emeralds) {
-        shownCombo = ++combo;
+        shownCombo = COMBO.next();
         comboAge = 0;
         TOASTS.add(new Toast(emeralds));
         play("cash");
         play("combo_" + shownCombo);
         if (shownCombo == 8) {
             for (int i = 0; i < 500; i++) DROPS.add(new Drop());
-            combo = 0;
         }
     }
     static void tick() {
@@ -72,7 +72,8 @@ final class Effects {
         CLIPS.removeIf(c -> !Minecraft.getInstance().getSoundManager().isActive(c));
     }
     static void clear() {
-        combo = shownCombo = comboAge = 0;
+        COMBO.reset();
+        shownCombo = comboAge = 0;
         TOASTS.clear();
         DROPS.clear();
         for (Clip clip : CLIPS) Minecraft.getInstance().getSoundManager().stop(clip);
