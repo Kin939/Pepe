@@ -1,0 +1,18 @@
+license="All Rights Reserved"
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+description='''Client-side villager auto-selling, emerald combos and celebration effects.'''
+[[dependencies.pepe]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},26.4)"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.pepe]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="CLIENT"

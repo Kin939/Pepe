@@ -1,0 +1,98 @@
+{
+  "music": {
+    "sounds": [
+      {
+        "name": "pepe:music",
+        "stream": true
+      }
+    ]
+  },
+  "cash": {
+    "sounds": [
+      {
+        "name": "pepe:cash",
+        "stream": false
+      }
+    ]
+  },
+  "error": {
+    "sounds": [
+      {
+        "name": "pepe:error",
+        "stream": false
+      }
+    ]
+  },
+  "off": {
+    "sounds": [
+      {
+        "name": "pepe:off",
+        "stream": false
+      }
+    ]
+  },
+  "combo_1": {
+    "sounds": [
+      {
+        "name": "pepe:combo_1",
+        "stream": false
+      }
+    ]
+  },
+  "combo_2": {
+    "sounds": [
+      {
+        "name": "pepe:combo_2",
+        "stream": false
+      }
+    ]
+  },
+  "combo_3": {
+    "sounds": [
+      {
+        "name": "pepe:combo_3",
+        "stream": false
+      }
+    ]
+  },
+  "combo_4": {
+    "sounds": [
+      {
+        "name": "pepe:combo_4",
+        "stream": false
+      }
+    ]
+  },
+  "combo_5": {
+    "sounds": [
+      {
+        "name": "pepe:combo_5",
+        "stream": false
+      }
+    ]
+  },
+  "combo_6": {
+    "sounds": [
+      {
+        "name": "pepe:combo_6",
+        "stream": false
+      }
+    ]
+  },
+  "combo_7": {
+    "sounds": [
+      {
+        "name": "pepe:combo_7",
+        "stream": false
+      }
+    ]
+  },
+  "combo_8": {
+    "sounds": [
+      {
+        "name": "pepe:combo_8",
+        "stream": false
+      }
+    ]
+  }
+}

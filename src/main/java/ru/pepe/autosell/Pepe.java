@@ -1,0 +1,83 @@
+package ru.pepe.autosell;
+
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.network.chat.Component;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.config.ModConfig;
+import org.lwjgl.glfw.GLFW;
+
+@Mod(value = Pepe.ID, dist = Dist.CLIENT)
+public final class Pepe {
+    public static final String ID = "pepe";
+    private final KeyMapping toggle = new KeyMapping("key.pepe.toggle", GLFW.GLFW_KEY_C, KeyMapping.Category.MISC);
+    private final Seller seller = new Seller();
+    private boolean enabled;
+
+    public Pepe(IEventBus bus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.CLIENT, SellFilter.SPEC);
+        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        bus.addListener(this::keys);
+        NeoForge.EVENT_BUS.addListener(this::tick);
+        NeoForge.EVENT_BUS.addListener(this::opening);
+        NeoForge.EVENT_BUS.addListener(this::render);
+    }
+
+    private void keys(RegisterKeyMappingsEvent event) { event.register(toggle); }
+
+    private void opening(ScreenEvent.Opening event) {
+        if (enabled && event.getNewScreen() instanceof MerchantScreen screen) {
+            // The server container is already installed; only suppress its visual screen.
+            seller.open(screen.getMenu());
+            event.setCanceled(true);
+        } else if (seller.active() && event.getNewScreen() != null) {
+            seller.close(false);
+        }
+    }
+
+    private void tick(ClientTickEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) {
+            if (enabled) disable(false);
+            return;
+        }
+        while (toggle.consumeClick()) {
+            if (enabled) disable(true);
+            else {
+                enabled = true;
+                Effects.startMusic();
+                mc.player.displayClientMessage(Component.translatable("message.pepe.on"), true);
+            }
+        }
+        if (enabled) {
+            seller.tick();
+            Effects.tick();
+        }
+    }
+
+    private void disable(boolean sound) {
+        enabled = false;
+        seller.close(false);
+        Effects.clear();
+        Effects.stopMusic();
+        if (sound) {
+            Effects.play("off");
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("message.pepe.off"), true);
+        }
+    }
+
+    private void render(RenderGuiEvent.Post event) {
+        if (enabled) Effects.render(event.getGuiGraphics());
+    }
+}
