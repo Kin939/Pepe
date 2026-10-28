@@ -75,7 +75,9 @@ final class TradeHighlights {
                 finishProbe();
             } else if (probeAge >= 60 || !pendingProbe.isAlive()) {
                 // Timeout is UNKNOWN, never falsely green/red. Back off this NPC.
-                cache.put(pendingProbe.getUUID(), new Entry(TradeAvailability.UNKNOWN, tick));
+                UUID id = pendingProbe.getUUID();
+                Entry previous = cache.get(id);
+                cache.put(id, new Entry(previous == null ? TradeAvailability.UNKNOWN : previous.status, tick));
                 finishProbe();
             }
             return;
