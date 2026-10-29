@@ -35,14 +35,23 @@ jobs:
           ALSOFT_DRIVERS: 'null'
         run: |
           set -o pipefail
-          timeout 240s xvfb-run -a ./gradlew --no-daemon runSmoke 2>&1 | tee smoke-output.log
+          mkdir -p run-smoke
+          printf 'onboardAccessibility:false\n' > run-smoke/options.txt
+          timeout 300s xvfb-run -a ./gradlew --no-daemon runSmoke 2>&1 | tee smoke-output.log
           test -f run-smoke/pepe-smoke-ok
       - name: Diagnostics
         if: failure()
         run: |
           tail -150 build-output.log || true
           tail -150 smoke-output.log || true
-          find build/test-results -name '*.xml' -exec cat {} \; || true
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          for name in ['build-output.log', 'smoke-output.log', 'run-smoke/logs/latest.log']:
+              p = Path(name)
+              if p.exists():
+                  text = p.read_text(errors='replace')[-24000:]
+                  print('::error title=' + name + '::' + text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYTHON
       - uses: actions/upload-artifact@v4
         if: always()
         with:
