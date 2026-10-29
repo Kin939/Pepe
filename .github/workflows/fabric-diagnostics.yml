@@ -1,0 +1,32 @@
+name: Fabric startup diagnostics
+on:
+  push:
+    branches: [arena/a8f8ad07-pepe]
+    paths: ['.github/workflows/fabric-diagnostics.yml']
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Fabric build run to inspect
+        required: true
+permissions:
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id || '40795884801' }}
+          name: fabric-build-and-diagnostics
+          path: diagnostics
+      - name: Expose startup log excerpts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('diagnostics').rglob('*.log'):
+              text = p.read_text(errors='replace')[-24000:]
+              for i in range(0, len(text), 3500):
+                  chunk = text[i:i+3500].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print(f'::warning title={p.name} part {i//3500}::{chunk}')
+          PY
