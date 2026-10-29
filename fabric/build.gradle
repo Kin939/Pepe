@@ -1,0 +1,53 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.20'
+}
+version = mod_version
+group = 'ru.pepe.autosell'
+base { archivesName = 'pepe-fabric' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+repositories { mavenCentral() }
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+// Share all trading/effects/policy code. Only entrypoint and config are loader-specific.
+def commonJava = layout.buildDirectory.dir('generated/sources/common')
+tasks.register('syncCommonJava', Sync) {
+    from('../src/main/java') {
+        exclude 'ru/pepe/autosell/Pepe.java', 'ru/pepe/autosell/SellFilter.java'
+    }
+    into commonJava
+}
+sourceSets {
+    main {
+        java.srcDir commonJava
+        resources.srcDir '../src/main/resources'
+        resources.exclude 'META-INF/**'
+    }
+    test {
+        java.srcDir '../src/test/java'
+        java.exclude '**/SellFilterTest.java', '**/TradeInputsTest.java'
+    }
+}
+tasks.named('compileJava') { dependsOn 'syncCommonJava' }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+test { useJUnitPlatform(); testLogging { exceptionFormat = 'full' } }
+loom {
+    runs {
+        smoke {
+            client()
+            name 'Fabric startup smoke test'
+            vmArg '-Dpepe.smokeTest=true'
+            vmArg '-Djava.awt.headless=true'
+            runDir 'run-smoke'
+        }
+    }
+}

@@ -40,3 +40,7 @@ repo/
 !**/src/**/repo/
 
 .cache/
+
+# Standalone Fabric runtime output
+fabric/run-smoke/
+fabric/.loom-cache/

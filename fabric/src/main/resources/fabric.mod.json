@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "pepe",
+  "version": "${version}",
+  "name": "Pepe Auto Sell (Fabric)",
+  "description": "Client-side villager bulk selling, inventory-aware trade outlines and combo effects.",
+  "authors": ["Kin939"],
+  "license": "All Rights Reserved",
+  "environment": "client",
+  "entrypoints": { "client": ["ru.pepe.autosell.Pepe"] },
+  "mixins": ["pepe.fabric.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": ">=0.165.0+26.3"
+  }
+}

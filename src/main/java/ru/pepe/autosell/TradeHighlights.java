@@ -12,8 +12,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.minecraft.world.phys.EntityHitResult;
 
 /** Serialized, read-only vanilla trade probes. No item clicks or artificial restocks. */
 final class TradeHighlights {
@@ -33,20 +31,16 @@ final class TradeHighlights {
     }
     UUID manualTarget() { return manualTarget; }
 
-    void onInteract(InputEvent.InteractionKeyMappingTriggered event) {
-        var mc = Minecraft.getInstance();
-        if (!enabled || !event.isUseItem() || mc.player == null
-                || !(mc.hitResult instanceof EntityHitResult hit) || !(hit.getEntity() instanceof Villager villager)) return;
+    /** Called before a manual interaction packet is sent. True means defer it. */
+    boolean onInteract(Villager villager) {
+        if (!enabled) return false;
         if (pendingProbe != null) {
-            // Do not interleave two unidentified open-menu responses. Replay the
-            // user's request as soon as the read-only probe finishes.
             queuedManual = villager;
-            event.setCanceled(true);
-            event.setSwingHand(false);
-        } else {
-            manualTarget = villager.getUUID();
-            nextRequest = tick + 60; // Give this manual open response exclusive ownership.
+            return true;
         }
+        manualTarget = villager.getUUID();
+        nextRequest = tick + 60;
+        return false;
     }
 
     boolean acceptProbe(MerchantMenu menu) {
@@ -63,7 +57,7 @@ final class TradeHighlights {
                     || offer.getCostB().is(Items.EMERALD)) continue;
             offers.add(new OfferSnapshot(offer.getCostA().copy(), offer.getCostB().copy(), !offer.isOutOfStock()));
         }
-                cache.put(id, new Entry(status(offers, inventory()), tick, List.copyOf(offers)));
+        cache.put(id, new Entry(status(offers, inventory()), tick, List.copyOf(offers)));
     }
 
     private List<ItemStack> inventory() {

@@ -31,10 +31,21 @@ public final class Pepe {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         bus.addListener(this::keys);
         bus.addListener(this::highlightModifiers);
-        NeoForge.EVENT_BUS.addListener(highlights::onInteract);
+        NeoForge.EVENT_BUS.addListener(this::interact);
         NeoForge.EVENT_BUS.addListener(this::tick);
         NeoForge.EVENT_BUS.addListener(this::opening);
         NeoForge.EVENT_BUS.addListener(this::render);
+    }
+
+    private void interact(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        var mc = Minecraft.getInstance();
+        if (!enabled || !event.isUseItem() || mc.player == null
+                || !(mc.hitResult instanceof net.minecraft.world.phys.EntityHitResult hit)
+                || !(hit.getEntity() instanceof net.minecraft.world.entity.npc.villager.Villager villager)) return;
+        if (highlights.onInteract(villager)) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
     }
 
     private void keys(RegisterKeyMappingsEvent event) { event.register(toggle); }
