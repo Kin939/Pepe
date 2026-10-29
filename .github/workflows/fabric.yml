@@ -28,16 +28,19 @@ jobs:
       - name: Install virtual display for real client startup
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libasound2t64 libxrandr2 libxinerama1 libxcursor1 libxi6
+          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libasound2t64 libxrandr2 libxinerama1 libxcursor1 libxi6 libegl1 libegl-mesa0 mesa-vulkan-drivers mesa-utils
       - name: Start Minecraft with Fabric Loader 0.19.5
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
+          MESA_GL_VERSION_OVERRIDE: '4.6'
+          SDL_VIDEODRIVER: 'x11'
+          SDL_VIDEO_X11_FORCE_EGL: '1'
           ALSOFT_DRIVERS: 'null'
         run: |
           set -o pipefail
           mkdir -p run-smoke
           printf 'onboardAccessibility:false\n' > run-smoke/options.txt
-          timeout 300s xvfb-run -a ./gradlew --no-daemon runSmoke 2>&1 | tee smoke-output.log
+          timeout 180s xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX +render -noreset' ./gradlew --no-daemon runSmoke 2>&1 | tee smoke-output.log
           test -f run-smoke/pepe-smoke-ok
       - name: Diagnostics
         if: failure()
@@ -50,7 +53,9 @@ jobs:
               p = Path(name)
               if p.exists():
                   text = p.read_text(errors='replace')[-24000:]
-                  print('::error title=' + name + '::' + text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+                  for i in range(0, len(text), 3500):
+                      chunk = text[i:i+3500].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                      print(f'::error title={name} part {i//3500}::{chunk}')
           PYTHON
       - uses: actions/upload-artifact@v4
         if: always()
