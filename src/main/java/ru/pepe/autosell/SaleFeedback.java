@@ -19,7 +19,7 @@ final class SaleFeedback {
     void sold(boolean crossedStack) {
         flashTicks = 20;
         failureFlash = false;
-        react(crossedStack ? Emotion.STACK : Emotion.SUCCESS, crossedStack ? 60 : 35);
+        react(crossedStack ? Emotion.STACK : Emotion.SUCCESS, crossedStack ? 144 : 35);
     }
     void failed() {
         flashTicks = 20;

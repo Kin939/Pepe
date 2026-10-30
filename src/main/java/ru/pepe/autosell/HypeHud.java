@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 
 /** Emerald arcade HUD. Only 2D extraction; never constructs entities or touches GL. */
 final class HypeHud {
-    private static final int INK = 0xF009161B, MINT = 0xFF64FFD0, MUTED = 0xFF71948F;
+    private static final int INK = 0xF0141728, MINT = 0xFF80FFD0, MUTED = 0xFF71948F;
     private static String text(String key) { return Component.translatable("hud.pepe." + key).getString(); }
     private static void label(GuiGraphicsExtractor g, String text, int x, int y, int color) {
         g.text(Minecraft.getInstance().font, text, x, y, color, false);
@@ -25,58 +25,45 @@ final class HypeHud {
         g.fill(x + 3, y, x + w - 3, y + 1, HudMotion.tint(accent, 0.8f));
         g.fill(x, y + 3, x + 1, y + 11, accent);
         g.fill(x + w - 1, y + h - 11, x + w, y + h - 3, accent);
-        g.fill(x + 5, y + h - 1, x + w - 5, y + h, 0xFF1D393A);
+        g.fill(x + 5, y + h - 1, x + w - 5, y + h, 0xFFAA598C);
     }
+    private static final Identifier CRT = Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/hype_crt.png");
     static void portrait(GuiGraphicsExtractor g, Identifier face, SaleFeedback.Emotion mood,
                          long clock, float time, int combo, int pulse) {
         float scale = HudMotion.hudScale(g.guiWidth(), g.guiHeight());
-        int accent = mood == SaleFeedback.Emotion.FINALE ? rainbow(time * 0.12f) : mood.color;
+        int accent = mood == SaleFeedback.Emotion.FINALE ? 0xFFFF91D9 : mood.color;
         g.pose().pushMatrix();
         try {
-            g.pose().translate(10 - (1 - HudMotion.easeOut(time / 0.45f)) * 125, g.guiHeight() - 36 - 128 * scale);
+            float intro = HudMotion.easeOut(time / 0.45f);
+            g.pose().translate(8 - (1-intro)*140, g.guiHeight() - 33 - 154 * scale);
             g.pose().scale(scale, scale);
             float kick = pulse / 20f;
-            if (mood == SaleFeedback.Emotion.FAILURE) g.pose().translate((float) Math.sin(time * 55) * kick * 2, 0);
-            panel(g, 0, 0, 112, 128, accent);
-            label(g, "HYPE TV", 10, 8, 0xFFE0FFF3);
-            g.fill(90, 9, 94, 13, (clock / 18 % 2 == 0) ? MINT : 0xFF296F54);
-            g.fill(98, 10, 103, 12, 0xFF436D63);
-            g.fill(8, 23, 104, 100, 0xFF020C0D);
-            g.fill(10, 25, 102, 98, 0xFF102C29);
-            // Portrait breathes and reacts within a generously inset screen.
+            g.pose().translate((float)Math.sin(time*40)*kick*1.5f, (float)Math.sin(time*3)*0.7f);
+            g.fill(18, 35, 111, 117, 0xFF092526);
             g.pose().pushMatrix();
             try {
-                float bob = (float) Math.sin(time * 2.5) * 1.2f;
-                float stretch = 1 + (float) Math.sin(time * 12) * kick * 0.035f;
-                g.pose().translate(56, 62 + bob);
-                g.pose().scale(stretch, 2 - stretch);
-                g.blit(RenderPipelines.GUI_TEXTURED, face, -32, -32, 0, 0, 64, 64, 64, 64);
-                if (mood == SaleFeedback.Emotion.IDLE && clock % 115 < 4) {
-                    g.fill(-15, -4, -4, 2, 0xFFD2AE83);
-                    g.fill(4, -4, 15, 2, 0xFFD2AE83);
-                    g.fill(-15, 0, -4, 2, 0xFF524432);
-                    g.fill(4, 0, 15, 2, 0xFF524432);
-                }
+                g.pose().translate(64, 76 + (float)Math.sin(time*2.5));
+                g.pose().scale(0.65f, 0.65f);
+                g.blit(RenderPipelines.GUI_TEXTURED, face, -64, -64, 0, 0, 128, 128, 128, 128);
             } finally { g.pose().popMatrix(); }
-            for (int row = 27; row < 98; row += 3) g.fill(10, row, 102, row + 1, 0x14020B0C);
-            int sweep = 27 + (int) (time * 16 % 69);
-            g.fill(10, sweep, 102, sweep + 1, 0x126CFFD8);
-            g.fill(11, 26, 13, 95, 0x2256FFBF);
-            g.fill(14, 26, 44, 27, 0x3066FFD2);
-            // Eight LEDs mirror actual combo steps, never increment the combo.
-            for (int i = 0; i < 8; i++) g.fill(12 + i * 11, 103, 20 + i * 11, 105,
-                    i < combo ? accent : 0xFF203C3D);
-            String emotion = text("face." + mood.texture);
+            for (int row=39; row<115; row+=3) g.fill(21,row,107,row+1,0x10020B0C);
+            int sweep=39+(int)(time*15%74);
+            g.fill(21,sweep,107,sweep+1,0x146CFFD8);
+            g.blit(RenderPipelines.GUI_TEXTURED, CRT, 0, 0, 0, 0, 128, 154, 128, 154);
             g.pose().pushMatrix();
             try {
-                g.pose().translate(53, 113);
-                g.pose().scale(0.7f, 0.7f);
-                centered(g, emotion, 0, 0, accent);
+                g.pose().translate(64, 23);
+                g.pose().scale(0.76f,0.76f);
+                centered(g,"HYPE TV",0,0,0xFFFFBBE7);
             } finally { g.pose().popMatrix(); }
-            for (int i = 0; i < 3; i++) {
-                int height = 2 + (int) ((Math.sin(time * 5 + i * 1.8) + 1) * 3);
-                g.fill(94 + i * 3, 122 - height, 96 + i * 3, 122, HudMotion.tint(accent, 0.6f));
-            }
+            for (int i=0;i<8;i++) g.fill(21+i*11,121,28+i*11,123,i<combo ? accent : 0xFF243F40);
+            g.fill(109,26,112,29,(clock/18%2==0)?0xFF75FFD4:0xFF275C4E);
+            g.pose().pushMatrix();
+            try {
+                g.pose().translate(67,132);
+                g.pose().scale(0.52f,0.52f);
+                centered(g,text("face."+mood.texture),0,0,accent);
+            } finally { g.pose().popMatrix(); }
         } finally { g.pose().popMatrix(); }
     }
     static void wallet(GuiGraphicsExtractor g, Identifier emerald, long total, double displayed, int pulse, float time) {
@@ -118,39 +105,7 @@ final class HypeHud {
         } finally { g.pose().popMatrix(); }
     }
     static void combo(GuiGraphicsExtractor g, int step, float age, float time) {
-        if (step == 0 || age >= 90) return;
-        float fade = age < 65 ? 1 : HudMotion.clamp((90 - age) / 25f);
-        float intro = HudMotion.easeOut(age / 8f);
-        int x = g.guiWidth() / 2, y = 20 - Math.round((1 - intro) * 18);
-        boolean finale = step == 8;
-        int accent = finale ? rainbow(time * 0.15f) : 0xFF6DFFD0;
-        g.pose().pushMatrix();
-        try {
-            g.pose().translate(x, y);
-            float scale = 0.9f + intro * 0.1f;
-            g.pose().scale(scale, scale);
-            g.fill(-65, 0, 65, 39, HudMotion.tint(0x06151A, fade * 0.9f));
-            g.fill(-65, 0, -63, 39, HudMotion.tint(accent, fade));
-            g.fill(63, 0, 65, 39, HudMotion.tint(accent, fade));
-            centered(g, finale ? "HYPE OVERLOAD" : "HYPE COMBO", 0, 6, HudMotion.tint(accent, fade));
-            String number = Integer.toString(step);
-            g.pose().pushMatrix();
-            try {
-                g.pose().translate(-40, 19);
-                float pop = 1.6f + (float) Math.exp(-age / 8f) * 0.65f;
-                g.pose().scale(pop, pop);
-                centered(g, number, 0, 0, HudMotion.tint(0xF1FFF7, fade));
-            } finally { g.pose().popMatrix(); }
-            for (int i = 0; i < 8; i++) g.fill(-19 + i * 9, 24, -12 + i * 9, 29,
-                    HudMotion.tint(i < step ? accent : 0x25403F, fade));
-            if (finale) {
-                for (int i = 0; i < 12; i++) {
-                    float a = i * (float) Math.PI / 6 + time * 0.25f;
-                    star(g, (float) Math.cos(a) * 88, 20 + (float) Math.sin(a) * 36,
-                            1.8f, HudMotion.tint(rainbow(i / 12f + time * 0.1f), fade * 0.7f));
-                }
-            }
-        } finally { g.pose().popMatrix(); }
+        ArcadeType.combo(g, step, age, time);
     }
     static void toast(GuiGraphicsExtractor g, Identifier emerald, int amount, float age, int index) {
         float progress = HudMotion.easeOut(age / 9f);

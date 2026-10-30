@@ -95,9 +95,12 @@
       }
     ]
   },
-  "musor_drop": {
+  "slotmachinejackpot": {
     "sounds": [
-      "pepe:musor_drop"
+      {
+        "name": "pepe:slotmachinejackpot",
+        "stream": false
+      }
     ]
   }
 }

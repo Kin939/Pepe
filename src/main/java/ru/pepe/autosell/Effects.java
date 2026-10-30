@@ -15,9 +15,17 @@ import net.minecraft.util.RandomSource;
 final class Effects {
     private static final SaleFeedback FEEDBACK = new SaleFeedback();
     private static final Identifier VIGNETTE = Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/emerald_vignette.png");
-    private static final Identifier[] FACES = java.util.Arrays.stream(SaleFeedback.Emotion.values())
-            .map(e -> Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/face_" + e.texture + ".png"))
-            .toArray(Identifier[]::new);
+    private static final java.util.Map<String, Identifier> FACES = java.util.Arrays.stream(PortraitArt.NAMES)
+            .collect(java.util.stream.Collectors.toUnmodifiableMap(n -> n,
+                    n -> Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/face_" + n + ".png")));
+    private static final Identifier[] FLYBY_FRAMES = new Identifier[8];
+    private static final ImpactZoom ZOOM = new ImpactZoom();
+    private static int reactions, cashCooldown;
+    private static Clip comboClip, jackpotClip;
+    static {
+        for (int i=0;i<8;i++) FLYBY_FRAMES[i] = Identifier.fromNamespaceAndPath(Pepe.ID,
+                "textures/gui/" + (i==0 ? "villager_flyby.png" : "villager_flyby_"+i+".png"));
+    }
     private static long visualStart, lastTickNanos;
     private static int reactionPulse;
     private static double displayedEarnings;
@@ -44,10 +52,11 @@ final class Effects {
                     loop ? SoundSource.MUSIC : SoundSource.PLAYERS, RandomSource.create());
             relative = true;
             attenuation = Attenuation.NONE;
-            volume = loop ? 0.55f : 0.8f;
+            volume = loop ? 0.55f : name.equals("cash") ? 0.35f : 0.8f;
             looping = loop;
             delay = 0;
         }
+        void gain(float target) { volume += (target - volume) * 0.15f; }
         @Override public void tick() {}
     }
     static void play(String name) {
@@ -73,26 +82,24 @@ final class Effects {
         TOASTS.add(new Toast(emeralds));
         int stacks = EARNINGS.add(emeralds);
         pendingFlybys += stacks;
-        FEEDBACK.sold(stacks > 0);
+        FEEDBACK.sold(false);
+        reactions++;
         reactionPulse = 20;
         burst(0.87f, 0.8f, 14, 0xFF69FFD0);
         ring(0.87f, 0.8f, 0xFF69FFD0, 0.55f);
-        if (stacks > 0) {
-            burst(0.16f, 0.72f, 36, 0xFF70EFFF);
-            ring(0.16f, 0.72f, 0xFF70EFFF, 1f);
-        }
         earningsPulse = 20;
-        play("cash");
+        if (cashCooldown == 0) { play("cash"); cashCooldown = 4; }
     }
     static void beginVisuals() {
         visualStart = System.nanoTime();
         burst(0.14f, 0.75f, 18, 0xFF5DFFD0);
     }
     static float adjustFov(float original) {
-        return original * SaleFeedback.zoomMultiplier((System.nanoTime() - visualStart) / 1_000_000_000.0);
+        return original * ZOOM.multiplier();
     }
     static void failedTrade() {
         FEEDBACK.failed();
+        reactions++;
         reactionPulse = 20;
         burst(0.16f, 0.72f, 10, 0xFFFF787D);
         ring(0.16f, 0.72f, 0xFFFF787D, 0.5f);
@@ -101,9 +108,14 @@ final class Effects {
     static void comboStep(int step) {
         shownCombo = step;
         comboAge = 0;
-        play("combo_" + shownCombo);
+        var sounds = Minecraft.getInstance().getSoundManager();
+        if (comboClip != null) sounds.stop(comboClip);
+        comboClip = new Clip("combo_" + shownCombo, false);
+        CLIPS.add(comboClip);
+        sounds.play(comboClip);
         if (shownCombo == 8) {
             FEEDBACK.finale();
+            ZOOM.trigger(true);
             burst(0.5f, 0.2f, 64, 0xFFFFE59E);
             ring(0.5f, 0.2f, 0xFFFFB3F4, 1.6f);
             ring(0.5f, 0.2f, 0xFF67FFD1, 1.1f);
@@ -113,6 +125,8 @@ final class Effects {
     }
     static void tick() {
         clock++;
+        ZOOM.tick();
+        if (cashCooldown > 0) cashCooldown--;
         lastTickNanos = System.nanoTime();
         if (reactionPulse > 0) reactionPulse--;
         FEEDBACK.tick();
@@ -122,21 +136,36 @@ final class Effects {
         comboAge++;
         if (earningsPulse > 0) earningsPulse--;
         if (flybyCooldown > 0) flybyCooldown--;
-        if (pendingFlybys > 0 && flybyCooldown == 0) {
+        if (pendingFlybys > 0 && flybyCooldown == 0
+                && (jackpotClip == null || !Minecraft.getInstance().getSoundManager().isActive(jackpotClip))) {
             pendingFlybys--;
-            flybyCooldown = 22;
+            flybyCooldown = 144; // Original jackpot recording: 7.131 s, never overlap.
             FLYBYS.add(new Flyby());
-            play("musor_drop");
+            FEEDBACK.sold(true);
+            reactionPulse = 20;
+            reactions++;
+            ZOOM.trigger(false);
+            burst(0.16f, 0.72f, 44, 0xFFFF91D9);
+            ring(0.16f, 0.72f, 0xFF73FFD1, 1.2f);
+            jackpotClip = new Clip("slotmachinejackpot", false);
+            CLIPS.add(jackpotClip);
+            Minecraft.getInstance().getSoundManager().play(jackpotClip);
         }
         FLYBYS.removeIf(f -> ++f.age > FlybyMotion.LIFETIME);
         int step = COMBO.tick();
         if (step != 0) comboStep(step);
         TOASTS.removeIf(t -> ++t.age > 65);
         DROPS.removeIf(d -> ++d.age > d.life);
-        CLIPS.removeIf(c -> !Minecraft.getInstance().getSoundManager().isActive(c));
+        var soundManager = Minecraft.getInstance().getSoundManager();
+        CLIPS.removeIf(c -> !soundManager.isActive(c));
+        if (music != null) music.gain((comboClip != null && soundManager.isActive(comboClip))
+                || (jackpotClip != null && soundManager.isActive(jackpotClip)) ? 0.2f : 0.55f);
     }
     static void clear() {
         FEEDBACK.clear();
+        ZOOM.clear();
+        reactions = cashCooldown = 0;
+        comboClip = jackpotClip = null;
         displayedEarnings = 0;
         reactionPulse = 0;
         lastTickNanos = 0;
@@ -176,7 +205,7 @@ final class Effects {
             float fade = 1 - t / p.life;
             HypeHud.star(g, x, y, (1 + fade) * scale, HudMotion.tint(p.color, fade * 0.7f));
         }
-        HypeHud.portrait(g, FACES[FEEDBACK.emotion().ordinal()], FEEDBACK.emotion(), clock, time, shownCombo, reactionPulse);
+        HypeHud.portrait(g, FACES.get(PortraitArt.name(FEEDBACK.emotion(), clock, reactions)), FEEDBACK.emotion(), clock, time, shownCombo, reactionPulse);
         for (int i = 0; i < Math.min(5, TOASTS.size()); i++) {
             Toast t = TOASTS.get(TOASTS.size() - 1 - i);
             HypeHud.toast(g, EMERALD, t.amount, t.age + partial, i);
@@ -197,8 +226,9 @@ final class Effects {
             try {
                 g.pose().translate(x, y);
                 g.pose().rotate(FlybyMotion.angle(f.age));
-                g.pose().scale(2.5f, 2.5f);
-                g.blit(RenderPipelines.GUI_TEXTURED, VILLAGER_SPRITE, -16, -32, 0, 0, 32, 64, 32, 64);
+                float spriteScale = 0.58f * HudMotion.hudScale(w, h);
+                g.pose().scale(spriteScale, spriteScale);
+                g.blit(RenderPipelines.GUI_TEXTURED, FLYBY_FRAMES[(f.age / 3) % 8], -64, -128, 0, 0, 128, 256, 128, 256);
             } finally {
                 g.pose().popMatrix();
             }

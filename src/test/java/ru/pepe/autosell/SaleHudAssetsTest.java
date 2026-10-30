@@ -15,8 +15,8 @@ class SaleHudAssetsTest {
                 byte[] bytes = stream.readAllBytes();
                 hashes.add(java.util.Arrays.hashCode(bytes));
                 var image = ImageIO.read(new java.io.ByteArrayInputStream(bytes));
-                assertEquals(64, image.getWidth());
-                assertEquals(64, image.getHeight());
+                assertEquals(128, image.getWidth());
+                assertEquals(128, image.getHeight());
             }
         }
         assertEquals(5, hashes.size());

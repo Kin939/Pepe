@@ -12,7 +12,9 @@ final class ComboPlayback {
         int step = counter.next();
         cooldown = switch (step) {
             case 7 -> 19; // one-second recording
-            case 8 -> 27; // let the finale and rainbow remain visible
+            case 8 -> 115; // full authored finale; selling remains independent
+            case 3, 4, 5 -> 9; // 0.456–0.480 s recordings
+            case 6 -> 7; // 0.36 s recording
             default -> 8;
         };
         return step;

@@ -27,8 +27,8 @@ class FlybySpriteTest {
             assertEquals(0x89504E470D0A1A0AL, in.readLong());
             assertEquals(13, in.readInt());
             assertEquals(0x49484452, in.readInt());
-            assertEquals(32, in.readInt());
-            assertEquals(64, in.readInt());
+            assertEquals(128, in.readInt());
+            assertEquals(256, in.readInt());
             assertEquals(8, in.readUnsignedByte());
             assertEquals(6, in.readUnsignedByte()); // RGBA, not a missing/opaque placeholder
         }
