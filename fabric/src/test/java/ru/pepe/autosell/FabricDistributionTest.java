@@ -15,7 +15,7 @@ class FabricDistributionTest {
             assertEquals("client", json.get("environment").getAsString());
             assertEquals("26.3", json.getAsJsonObject("depends").get("minecraft").getAsString());
             assertEquals(">=0.19.5", json.getAsJsonObject("depends").get("fabricloader").getAsString());
-            assertEquals("1.0.7", json.get("version").getAsString());
+            assertEquals("1.0.8", json.get("version").getAsString());
         }
         assertNull(getClass().getResource("/META-INF/neoforge.mods.toml"));
     }

@@ -16,6 +16,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 final class Effects {
+    private static final SaleFeedback FEEDBACK = new SaleFeedback();
+    private static final Identifier VIGNETTE = Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/emerald_vignette.png");
+    private static final Identifier[] FACES = java.util.Arrays.stream(SaleFeedback.Emotion.values())
+            .map(e -> Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/face_" + e.texture + ".png"))
+            .toArray(Identifier[]::new);
+    private static long visualStart;
     private static final Random RNG = new Random();
     private static final List<Toast> TOASTS = new ArrayList<>();
     private static final List<Drop> DROPS = new ArrayList<>();
@@ -61,21 +67,30 @@ final class Effects {
     }
     static void sales(int emeralds) {
         TOASTS.add(new Toast(emeralds));
-        pendingFlybys += EARNINGS.add(emeralds);
+        int stacks = EARNINGS.add(emeralds);
+        pendingFlybys += stacks;
+        FEEDBACK.sold(stacks > 0);
         earningsPulse = 20;
         play("cash");
     }
+    static void beginVisuals() { visualStart = System.nanoTime(); }
+    static float adjustFov(float original) {
+        return original * SaleFeedback.zoomMultiplier((System.nanoTime() - visualStart) / 1_000_000_000.0);
+    }
+    static void failedTrade() { FEEDBACK.failed(); }
     static void villagerFinished() { COMBO.add(1); }
     private static void comboStep(int step) {
         shownCombo = step;
         comboAge = 0;
         play("combo_" + shownCombo);
         if (shownCombo == 8) {
+            FEEDBACK.finale();
             for (int i = 0; i < 500; i++) DROPS.add(new Drop());
         }
     }
     static void tick() {
         clock++;
+        FEEDBACK.tick();
         comboAge++;
         if (earningsPulse > 0) earningsPulse--;
         if (flybyCooldown > 0) flybyCooldown--;
@@ -93,6 +108,8 @@ final class Effects {
         CLIPS.removeIf(c -> !Minecraft.getInstance().getSoundManager().isActive(c));
     }
     static void clear() {
+        FEEDBACK.clear();
+        visualStart = 0;
         COMBO.clear();
         EARNINGS.reset();
         pendingFlybys = flybyCooldown = earningsPulse = 0;
@@ -106,7 +123,15 @@ final class Effects {
     static void render(GuiGraphicsExtractor g) {
         var mc = Minecraft.getInstance();
         int w = g.guiWidth(), h = g.guiHeight();
-        g.text(mc.font, "AUTO SELL [C]", 9, 9, 0xFF70FF99, true);
+        // Screen effects underneath all Pepe HUD elements; center of vignette is transparent.
+        g.pose().pushMatrix();
+        try {
+            g.pose().scale(w / 256f, h / 256f);
+            g.blit(RenderPipelines.GUI_TEXTURED, VIGNETTE, 0, 0, 0, 0, 256, 256, 256, 256);
+        } finally { g.pose().popMatrix(); }
+        int flash = FEEDBACK.flashColor();
+        if (flash != 0) g.fill(0, 0, w, h, flash);
+        renderPortrait(g, h);
         for (int i = 0; i < TOASTS.size(); i++) {
             Toast t = TOASTS.get(TOASTS.size() - 1 - i);
             if (i > 7) break;
@@ -168,6 +193,35 @@ final class Effects {
             g.pose().popMatrix();
         }
     }
+    private static void renderPortrait(GuiGraphicsExtractor g, int h) {
+        var mc = Minecraft.getInstance();
+        var mood = FEEDBACK.emotion();
+        int x = 8, y = Math.max(8, h - 139);
+        int border = mood.color;
+        // Original CRT-inspired pixel bezel, not a game entity or third-party asset.
+        g.fill(x + 4, y + 4, x + 94, y + 109, 0x66000000);
+        g.fill(x - 2, y - 2, x + 92, y + 107, 0x292FE69C);
+        g.fill(x, y, x + 90, y + 105, 0xFF09221B);
+        g.fill(x + 2, y + 2, x + 88, y + 103, border);
+        g.fill(x + 4, y + 4, x + 86, y + 101, 0xFF17392D);
+        String title = "PEPE TV";
+        g.text(mc.font, title, x + (90 - mc.font.width(title)) / 2, y + 7, 0xFFC8FFE0, true);
+        int sx = x + 13, sy = y + 20;
+        g.fill(sx - 2, sy - 2, sx + 66, sy + 66, 0xFF04120E);
+        g.blit(RenderPipelines.GUI_TEXTURED, FACES[mood.ordinal()], sx, sy, 0, 0, 64, 64, 64, 64);
+        for (int row = 0; row < 64; row += 3) g.fill(sx, sy + row, sx + 64, sy + row + 1, 0x1005120D);
+        // Small animated indicator and two CRT knobs.
+        g.fill(x + 6, y + 91, x + 9, y + 94, (clock / 12 % 2 == 0) ? border : 0xFF296E50);
+        g.fill(x + 81, y + 91, x + 85, y + 95, 0xFF091A14);
+        String label = net.minecraft.network.chat.Component.translatable("hud.pepe.face." + mood.texture).getString();
+        g.pose().pushMatrix();
+        try {
+            g.pose().translate(x + 45f, y + 90f);
+            g.pose().scale(0.75f, 0.75f);
+            g.text(mc.font, label, -mc.font.width(label) / 2, 0, border, true);
+        } finally { g.pose().popMatrix(); }
+    }
+
     private static final class Toast {
         final int amount;
         int age;

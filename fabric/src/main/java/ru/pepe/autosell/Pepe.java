@@ -56,6 +56,12 @@ public final class Pepe implements ClientModInitializer {
         return instance == null ? 0 : instance.highlights.outline(id);
     }
 
+    public static float adjustFov(float original) {
+        var mc = Minecraft.getInstance();
+        return instance != null && instance.enabled && mc.level != null && mc.gui.screen() == null
+                ? Effects.adjustFov(original) : original;
+    }
+
     private void tick(Minecraft mc) {
         // Opt-in CI startup check; no test behavior in normal launches.
         if (Boolean.getBoolean("pepe.smokeTest") && mc.gui.screen() instanceof TitleScreen && ++smokeTicks >= 60) {
@@ -73,6 +79,7 @@ public final class Pepe implements ClientModInitializer {
                 SellFilter.reload();
                 Effects.clear();
                 enabled = true;
+                Effects.beginVisuals();
                 highlights.start();
                 Effects.startMusic();
                 mc.player.sendSystemMessage(Component.translatable("message.pepe.on"));

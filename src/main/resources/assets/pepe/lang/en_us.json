@@ -2,5 +2,10 @@
   "key.pepe.toggle": "Toggle auto sell",
   "message.pepe.on": "Auto sell ON — right-click a villager",
   "message.pepe.off": "Auto sell OFF",
-  "hud.pepe.earned": "Earned: %s"
+  "hud.pepe.earned": "Earned: %s",
+  "hud.pepe.face.idle": "READY",
+  "hud.pepe.face.success": "NICE DEAL!",
+  "hud.pepe.face.failure": "NO DEAL",
+  "hud.pepe.face.stack": "EMERALD STACK!",
+  "hud.pepe.face.finale": "MAX COMBO!"
 }

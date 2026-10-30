@@ -35,6 +35,7 @@ public final class Pepe {
         NeoForge.EVENT_BUS.addListener(this::tick);
         NeoForge.EVENT_BUS.addListener(this::opening);
         NeoForge.EVENT_BUS.addListener(this::render);
+        NeoForge.EVENT_BUS.addListener(this::fov);
     }
 
     private void interact(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
@@ -78,6 +79,7 @@ public final class Pepe {
             else {
                 Effects.clear();
                 enabled = true;
+                Effects.beginVisuals();
                 highlights.start();
                 Effects.startMusic();
                 mc.player.sendSystemMessage(Component.translatable("message.pepe.on"));
@@ -100,6 +102,12 @@ public final class Pepe {
             Effects.play("off");
             Minecraft.getInstance().player.sendSystemMessage(Component.translatable("message.pepe.off"));
         }
+    }
+
+    private void fov(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov event) {
+        var mc = Minecraft.getInstance();
+        if (enabled && mc.level != null && mc.gui.screen() == null)
+            event.setFOV(Effects.adjustFov(event.getFOV()));
     }
 
     private void render(RenderGuiEvent.Post event) {

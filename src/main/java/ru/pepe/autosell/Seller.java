@@ -83,6 +83,7 @@ final class Seller {
                 visit.sold();
                 Effects.sales(gained);
             } else {
+                Effects.failedTrade();
                 exhausted.add(offerIndex);
             }
             // A quick-move consumes the filled input stacks. Refill and continue
@@ -138,6 +139,9 @@ final class Seller {
         merchantId = null;
         var player = Minecraft.getInstance().player;
         if (old != null && player != null && player.containerMenu == old) player.closeContainer();
-        if (error) Effects.play("error");
+        if (error && old != null) {
+            Effects.failedTrade();
+            Effects.play("error");
+        }
     }
 }
