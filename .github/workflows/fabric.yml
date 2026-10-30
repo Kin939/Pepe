@@ -40,6 +40,16 @@ jobs:
           set -o pipefail
           mkdir -p run-smoke
           printf 'onboardAccessibility:false\n' > run-smoke/options.txt
+          # Mojang asset CDN can fail transiently; retry downloads, never a crashing client.
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon downloadAssets --stacktrace; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            sleep 10
+          done
           timeout 180s xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX +render -noreset' ./gradlew --no-daemon runSmoke 2>&1 | tee smoke-output.log
           test -f run-smoke/pepe-smoke-ok
       - name: Diagnostics
