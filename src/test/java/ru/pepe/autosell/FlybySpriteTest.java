@@ -15,6 +15,7 @@ class FlybySpriteTest {
             assertFalse(pool.contains("net/minecraft/world/entity/"));
             assertFalse(pool.contains("net/minecraft/client/gui/screens/inventory/InventoryScreen"));
             assertFalse(pool.contains("GuiVillagerFactory"));
+            assertFalse(pool.contains("net/minecraft/world/item/ItemStack"));
             assertFalse(pool.contains("extractRenderState"));
             assertTrue(pool.contains("textures/gui/villager_flyby.png"));
         }

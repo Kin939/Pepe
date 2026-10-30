@@ -11,8 +11,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 final class Effects {
     private static final SaleFeedback FEEDBACK = new SaleFeedback();
@@ -34,7 +32,7 @@ final class Effects {
     private static final Identifier VILLAGER_SPRITE = Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/villager_flyby.png");
     private static int pendingFlybys, flybyCooldown, earningsPulse;
     private static final List<Clip> CLIPS = new ArrayList<>();
-    private static final ItemStack EMERALD = new ItemStack(Items.EMERALD);
+    private static final Identifier EMERALD = Identifier.fromNamespaceAndPath("minecraft", "textures/item/emerald.png");
     private static Clip music;
     private static final ComboPlayback COMBO = new ComboPlayback();
     private static int shownCombo, comboAge;
@@ -214,7 +212,7 @@ final class Effects {
             g.pose().translate(x, y);
             g.pose().rotate(d.phase + d.age * d.spin);
             g.pose().scale(d.scale, d.scale);
-            g.item(EMERALD, -8, -8);
+            g.blit(RenderPipelines.GUI_TEXTURED, EMERALD, -8, -8, 0, 0, 16, 16, 16, 16);
             g.pose().popMatrix();
         }
     }

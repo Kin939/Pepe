@@ -6,7 +6,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
 
 /** Emerald arcade HUD. Only 2D extraction; never constructs entities or touches GL. */
 final class HypeHud {
@@ -80,7 +79,7 @@ final class HypeHud {
             }
         } finally { g.pose().popMatrix(); }
     }
-    static void wallet(GuiGraphicsExtractor g, ItemStack emerald, long total, double displayed, int pulse, float time) {
+    static void wallet(GuiGraphicsExtractor g, Identifier emerald, long total, double displayed, int pulse, float time) {
         float scale = HudMotion.hudScale(g.guiWidth(), g.guiHeight());
         int width = Math.max(152, Math.round(Minecraft.getInstance().font.width(Long.toString(total)) * 1.7f) + 60);
         g.pose().pushMatrix();
@@ -99,7 +98,7 @@ final class HypeHud {
             try {
                 g.pose().translate(width - 29, 24 - (float) Math.sin(time * 3) * 1.5f);
                 g.pose().scale(1.25f, 1.25f);
-                g.item(emerald, 0, 0);
+                g.blit(RenderPipelines.GUI_TEXTURED, emerald, 0, 0, 0, 0, 16, 16, 16, 16);
             } finally { g.pose().popMatrix(); }
             int progress = (int) (total % 64);
             g.fill(10, 47, width - 10, 50, 0xFF183738);
@@ -153,7 +152,7 @@ final class HypeHud {
             }
         } finally { g.pose().popMatrix(); }
     }
-    static void toast(GuiGraphicsExtractor g, ItemStack emerald, int amount, float age, int index) {
+    static void toast(GuiGraphicsExtractor g, Identifier emerald, int amount, float age, int index) {
         float progress = HudMotion.easeOut(age / 9f);
         float opacity = Math.min(1, (65 - age) / 18f);
         if (opacity <= 0) return;
@@ -163,7 +162,7 @@ final class HypeHud {
         int y = 14 + index * 25;
         g.fill(x, y, x + width, y + 20, HudMotion.tint(0x0C211F, opacity * 0.9f));
         g.fill(x, y + 1, x + 2, y + 19, HudMotion.tint(MINT, opacity));
-        g.item(emerald, x + 5, y + 2);
+        g.blit(RenderPipelines.GUI_TEXTURED, emerald, x + 5, y + 2, 0, 0, 16, 16, 16, 16);
         label(g, value, x + 25, y + 6, HudMotion.tint(0xC8FFE3, opacity));
     }
     static void star(GuiGraphicsExtractor g, float x, float y, float size, int color) {
