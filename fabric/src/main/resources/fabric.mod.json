@@ -2,13 +2,21 @@
   "schemaVersion": 1,
   "id": "pepe",
   "version": "${version}",
-  "name": "Pepe Auto Sell (Fabric)",
-  "description": "Client-side villager bulk selling, inventory-aware trade outlines and combo effects.",
-  "authors": ["Kin939"],
+  "name": "Hype auto sell",
+  "description": "Emerald arcade HUD, expressive HYPE TV and client-side villager bulk selling.",
+  "authors": [
+    "Kin939"
+  ],
   "license": "All Rights Reserved",
   "environment": "client",
-  "entrypoints": { "client": ["ru.pepe.autosell.Pepe"] },
-  "mixins": ["pepe.fabric.mixins.json"],
+  "entrypoints": {
+    "client": [
+      "ru.pepe.autosell.Pepe"
+    ]
+  },
+  "mixins": [
+    "pepe.fabric.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "26.3",

@@ -30,7 +30,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = 'hype-auto-sell-neoforge'
 }
 
 // Mojang ships Java 25 to end users in 26.3, so mods should target Java 25.

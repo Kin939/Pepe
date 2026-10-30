@@ -12,10 +12,12 @@ class FabricDistributionTest {
         try (var stream = getClass().getResourceAsStream("/fabric.mod.json")) {
             assertNotNull(stream);
             var json = JsonParser.parseString(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+            assertEquals("Hype auto sell", json.get("name").getAsString());
+            assertEquals("pepe", json.get("id").getAsString()); // Preserve upgrade/config compatibility.
             assertEquals("client", json.get("environment").getAsString());
             assertEquals("26.3", json.getAsJsonObject("depends").get("minecraft").getAsString());
             assertEquals(">=0.19.5", json.getAsJsonObject("depends").get("fabricloader").getAsString());
-            assertEquals("1.0.8", json.get("version").getAsString());
+            assertEquals("1.1.0", json.get("version").getAsString());
         }
         assertNull(getClass().getResource("/META-INF/neoforge.mods.toml"));
     }

@@ -1,11 +1,13 @@
 {
-  "key.pepe.toggle": "Переключить автопродажу",
-  "message.pepe.on": "Автопродажа ВКЛ — ПКМ по жителю",
-  "message.pepe.off": "Автопродажа ВЫКЛ",
+  "key.pepe.toggle": "Hype auto sell: переключить режим",
+  "message.pepe.on": "Hype auto sell ВКЛ — ПКМ по жителю",
+  "message.pepe.off": "Hype auto sell ВЫКЛ",
   "hud.pepe.earned": "Заработано: %s",
   "hud.pepe.face.idle": "ГОТОВ",
   "hud.pepe.face.success": "ПРОДАНО!",
   "hud.pepe.face.failure": "НЕУДАЧА",
   "hud.pepe.face.stack": "СТАК!",
-  "hud.pepe.face.finale": "МАКС. КОМБО!"
+  "hud.pepe.face.finale": "МАКС. КОМБО!",
+  "hud.pepe.session": "ЗА СЕССИЮ",
+  "hud.pepe.next_stack": "ДО СЛЕД. СТАКА"
 }

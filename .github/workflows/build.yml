@@ -37,13 +37,13 @@ jobs:
           PYTHON
       - uses: actions/upload-artifact@v4
         with:
-          name: pepe-neoforge-26.3
-          path: build/libs/pepe-*.jar
+          name: hype-auto-sell-neoforge-26.3
+          path: build/libs/hype-auto-sell-neoforge-*.jar
       - name: Publish verified JAR
         if: ${{ !contains(github.event.head_commit.message, '[fabric]') }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(sed -n 's/^mod_version=//p' gradle.properties)
-          TAG="pepe-${VERSION}-build-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" "build/libs/pepe-${VERSION}.jar" --target "$GITHUB_SHA" --title "Pepe Auto Sell ${VERSION} (build ${GITHUB_RUN_NUMBER})" --notes-file RELEASE_NOTES.md
+          TAG="hype-auto-sell-neoforge-${VERSION}-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" "build/libs/hype-auto-sell-neoforge-${VERSION}.jar" --target "$GITHUB_SHA" --title "Hype auto sell ${VERSION} (build ${GITHUB_RUN_NUMBER})" --notes-file RELEASE_NOTES.md

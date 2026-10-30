@@ -1,6 +1,5 @@
 package ru.pepe.autosell;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -21,7 +20,12 @@ final class Effects {
     private static final Identifier[] FACES = java.util.Arrays.stream(SaleFeedback.Emotion.values())
             .map(e -> Identifier.fromNamespaceAndPath(Pepe.ID, "textures/gui/face_" + e.texture + ".png"))
             .toArray(Identifier[]::new);
-    private static long visualStart;
+    private static long visualStart, lastTickNanos;
+    private static int reactionPulse;
+    private static double displayedEarnings;
+    private static final int MAX_SPARKS = 144, MAX_RINGS = 6;
+    private static final List<Spark> SPARKS = new ArrayList<>();
+    private static final List<Ring> RINGS = new ArrayList<>();
     private static final Random RNG = new Random();
     private static final List<Toast> TOASTS = new ArrayList<>();
     private static final List<Drop> DROPS = new ArrayList<>();
@@ -66,18 +70,35 @@ final class Effects {
         music = null;
     }
     static void sales(int emeralds) {
+        if (emeralds <= 0) return;
+        if (TOASTS.size() == 8) TOASTS.remove(0);
         TOASTS.add(new Toast(emeralds));
         int stacks = EARNINGS.add(emeralds);
         pendingFlybys += stacks;
         FEEDBACK.sold(stacks > 0);
+        reactionPulse = 20;
+        burst(0.87f, 0.8f, 14, 0xFF69FFD0);
+        ring(0.87f, 0.8f, 0xFF69FFD0, 0.55f);
+        if (stacks > 0) {
+            burst(0.16f, 0.72f, 36, 0xFF70EFFF);
+            ring(0.16f, 0.72f, 0xFF70EFFF, 1f);
+        }
         earningsPulse = 20;
         play("cash");
     }
-    static void beginVisuals() { visualStart = System.nanoTime(); }
+    static void beginVisuals() {
+        visualStart = System.nanoTime();
+        burst(0.14f, 0.75f, 18, 0xFF5DFFD0);
+    }
     static float adjustFov(float original) {
         return original * SaleFeedback.zoomMultiplier((System.nanoTime() - visualStart) / 1_000_000_000.0);
     }
-    static void failedTrade() { FEEDBACK.failed(); }
+    static void failedTrade() {
+        FEEDBACK.failed();
+        reactionPulse = 20;
+        burst(0.16f, 0.72f, 10, 0xFFFF787D);
+        ring(0.16f, 0.72f, 0xFFFF787D, 0.5f);
+    }
     static void villagerFinished() { COMBO.add(1); }
     private static void comboStep(int step) {
         shownCombo = step;
@@ -85,12 +106,21 @@ final class Effects {
         play("combo_" + shownCombo);
         if (shownCombo == 8) {
             FEEDBACK.finale();
-            for (int i = 0; i < 500; i++) DROPS.add(new Drop());
+            burst(0.5f, 0.2f, 64, 0xFFFFE59E);
+            ring(0.5f, 0.2f, 0xFFFFB3F4, 1.6f);
+            ring(0.5f, 0.2f, 0xFF67FFD1, 1.1f);
+            int count = Math.min(500, 600 - DROPS.size());
+            for (int i = 0; i < count; i++) DROPS.add(new Drop());
         }
     }
     static void tick() {
         clock++;
+        lastTickNanos = System.nanoTime();
+        if (reactionPulse > 0) reactionPulse--;
         FEEDBACK.tick();
+        displayedEarnings = HudMotion.counterStep(displayedEarnings, EARNINGS.total());
+        SPARKS.removeIf(p -> ++p.age >= p.life);
+        RINGS.removeIf(r -> ++r.age >= 32);
         comboAge++;
         if (earningsPulse > 0) earningsPulse--;
         if (flybyCooldown > 0) flybyCooldown--;
@@ -109,6 +139,12 @@ final class Effects {
     }
     static void clear() {
         FEEDBACK.clear();
+        displayedEarnings = 0;
+        reactionPulse = 0;
+        lastTickNanos = 0;
+        clock = 0;
+        SPARKS.clear();
+        RINGS.clear();
         visualStart = 0;
         COMBO.clear();
         EARNINGS.reset();
@@ -131,43 +167,32 @@ final class Effects {
         } finally { g.pose().popMatrix(); }
         int flash = FEEDBACK.flashColor();
         if (flash != 0) g.fill(0, 0, w, h, flash);
-        renderPortrait(g, h);
-        for (int i = 0; i < TOASTS.size(); i++) {
+        float time = visualStart == 0 ? 0 : (System.nanoTime() - visualStart) / 1_000_000_000f;
+        float scale = HudMotion.hudScale(w, h);
+        float partial = Math.min(1f, (System.nanoTime() - lastTickNanos) / 50_000_000f);
+        for (Ring r : RINGS) HypeHud.ring(g, r.x * w, r.y * h, (r.age + partial) / 32f, r.color, r.size * scale);
+        for (Spark p : SPARKS) {
+            float t = p.age + partial;
+            float x = p.x * w + p.vx * t * scale;
+            float y = p.y * h + (p.vy * t + 0.035f * t * t) * scale;
+            float fade = 1 - t / p.life;
+            HypeHud.star(g, x, y, (1 + fade) * scale, HudMotion.tint(p.color, fade * 0.7f));
+        }
+        HypeHud.portrait(g, FACES[FEEDBACK.emotion().ordinal()], FEEDBACK.emotion(), clock, time, shownCombo, reactionPulse);
+        for (int i = 0; i < Math.min(5, TOASTS.size()); i++) {
             Toast t = TOASTS.get(TOASTS.size() - 1 - i);
-            if (i > 7) break;
-            String text = "+" + t.amount + " ✦";
-            int x = w - mc.font.width(text) - 32, y = 18 + i * 24 - Math.min(t.age / 5, 9);
-            int alpha = Math.min(255, (65 - t.age) * 15);
-            g.item(EMERALD, x - 22, y - 4);
-            g.text(mc.font, text, x, y, (alpha << 24) | 0x6BFFA0, true);
+            HypeHud.toast(g, EMERALD, t.amount, t.age + partial, i);
         }
-        String earned = net.minecraft.network.chat.Component.translatable("hud.pepe.earned", EARNINGS.total()).getString();
-        int panelWidth = mc.font.width(earned) + 42;
-        int panelX = w - panelWidth - 10;
-        int panelY = h - 35 - earningsPulse / 5;
-        g.fill(panelX, panelY, w - 10, panelY + 25, 0xC0182922);
-        g.item(EMERALD, panelX + 5, panelY + 4);
-        g.text(mc.font, earned, panelX + 27, panelY + 8, 0xFF7CFFAC, true);
-        if (shownCombo > 0 && comboAge < 50) {
-            String text = "Combo " + shownCombo;
-            g.pose().pushMatrix();
-            g.pose().translate(w / 2f + 22, h / 2f + 20);
-            g.pose().rotate((float) (Math.sin(comboAge * 0.65) * 0.22 * Math.exp(-comboAge / 22.0)));
-            float scale = 1.35f + (float) Math.exp(-comboAge / 8.0) * 0.65f;
-            g.pose().scale(scale, scale);
-            int x = 0;
-            for (int i = 0; i < text.length(); i++) {
-                String ch = text.substring(i, i + 1);
-                int color = shownCombo == 8 ? Color.HSBtoRGB((clock * 0.035f + i * 0.12f) % 1, 0.9f, 1) : 0xFFFFDA55;
-                g.text(mc.font, ch, x, 0, color, true);
-                x += mc.font.width(ch);
-            }
-            g.pose().popMatrix();
-        }
+        HypeHud.wallet(g, EMERALD, EARNINGS.total(), displayedEarnings, earningsPulse, time);
+        HypeHud.combo(g, shownCombo, comboAge + partial, time);
         for (Flyby f : FLYBYS) {
             float progress = FlybyMotion.progress(f.age);
             float x = FlybyMotion.x(f.age, w);
             float y = (float) (h * f.height + Math.sin(progress * Math.PI * 2) * h * 0.12);
+            for (int i = 1; i <= 7; i++) {
+                HypeHud.star(g, x - i * 10, y + (float) Math.sin(time * 8 - i) * 9,
+                        2.5f - i * 0.2f, HudMotion.tint(0x73FFD5, (8 - i) / 24f));
+            }
             // Only a normal HUD texture: no Villager, world, entity ID, render
             // state extraction, InventoryScreen or mob-renderer mixins involved.
             g.pose().pushMatrix();
@@ -193,33 +218,36 @@ final class Effects {
             g.pose().popMatrix();
         }
     }
-    private static void renderPortrait(GuiGraphicsExtractor g, int h) {
-        var mc = Minecraft.getInstance();
-        var mood = FEEDBACK.emotion();
-        int x = 8, y = Math.max(8, h - 139);
-        int border = mood.color;
-        // Original CRT-inspired pixel bezel, not a game entity or third-party asset.
-        g.fill(x + 4, y + 4, x + 94, y + 109, 0x66000000);
-        g.fill(x - 2, y - 2, x + 92, y + 107, 0x292FE69C);
-        g.fill(x, y, x + 90, y + 105, 0xFF09221B);
-        g.fill(x + 2, y + 2, x + 88, y + 103, border);
-        g.fill(x + 4, y + 4, x + 86, y + 101, 0xFF17392D);
-        String title = "PEPE TV";
-        g.text(mc.font, title, x + (90 - mc.font.width(title)) / 2, y + 7, 0xFFC8FFE0, true);
-        int sx = x + 13, sy = y + 20;
-        g.fill(sx - 2, sy - 2, sx + 66, sy + 66, 0xFF04120E);
-        g.blit(RenderPipelines.GUI_TEXTURED, FACES[mood.ordinal()], sx, sy, 0, 0, 64, 64, 64, 64);
-        for (int row = 0; row < 64; row += 3) g.fill(sx, sy + row, sx + 64, sy + row + 1, 0x1005120D);
-        // Small animated indicator and two CRT knobs.
-        g.fill(x + 6, y + 91, x + 9, y + 94, (clock / 12 % 2 == 0) ? border : 0xFF296E50);
-        g.fill(x + 81, y + 91, x + 85, y + 95, 0xFF091A14);
-        String label = net.minecraft.network.chat.Component.translatable("hud.pepe.face." + mood.texture).getString();
-        g.pose().pushMatrix();
-        try {
-            g.pose().translate(x + 45f, y + 90f);
-            g.pose().scale(0.75f, 0.75f);
-            g.text(mc.font, label, -mc.font.width(label) / 2, 0, border, true);
-        } finally { g.pose().popMatrix(); }
+    private static void burst(float x, float y, int count, int color) {
+        for (int i = 0; i < count; i++) {
+            if (SPARKS.size() == MAX_SPARKS) SPARKS.remove(0);
+            SPARKS.add(new Spark(x, y, color));
+        }
+    }
+    private static void ring(float x, float y, int color, float size) {
+        if (RINGS.size() == MAX_RINGS) RINGS.remove(0);
+        RINGS.add(new Ring(x, y, color, size));
+    }
+    private static final class Spark {
+        final float x, y, vx, vy;
+        final int color, life;
+        int age;
+        Spark(float x, float y, int color) {
+            this.x = x; this.y = y; this.color = color;
+            double angle = RNG.nextDouble() * Math.PI * 2;
+            float speed = 0.6f + RNG.nextFloat() * 2.3f;
+            vx = (float) Math.cos(angle) * speed;
+            vy = (float) Math.sin(angle) * speed - 0.8f;
+            life = 25 + RNG.nextInt(18);
+        }
+    }
+    private static final class Ring {
+        final float x, y, size;
+        final int color;
+        int age;
+        Ring(float x, float y, int color, float size) {
+            this.x = x; this.y = y; this.color = color; this.size = size;
+        }
     }
 
     private static final class Toast {

@@ -3,7 +3,7 @@ plugins {
 }
 version = mod_version
 group = 'ru.pepe.autosell'
-base { archivesName = 'pepe-fabric' }
+base { archivesName = 'hype-auto-sell-fabric' }
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 repositories { mavenCentral() }
 dependencies {

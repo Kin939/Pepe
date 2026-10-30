@@ -1,11 +1,13 @@
 {
-  "key.pepe.toggle": "Toggle auto sell",
-  "message.pepe.on": "Auto sell ON — right-click a villager",
-  "message.pepe.off": "Auto sell OFF",
+  "key.pepe.toggle": "Hype auto sell: toggle selling mode",
+  "message.pepe.on": "Hype auto sell ON — right-click a villager",
+  "message.pepe.off": "Hype auto sell OFF",
   "hud.pepe.earned": "Earned: %s",
   "hud.pepe.face.idle": "READY",
   "hud.pepe.face.success": "NICE DEAL!",
   "hud.pepe.face.failure": "NO DEAL",
   "hud.pepe.face.stack": "EMERALD STACK!",
-  "hud.pepe.face.finale": "MAX COMBO!"
+  "hud.pepe.face.finale": "MAX COMBO!",
+  "hud.pepe.session": "SESSION EARNINGS",
+  "hud.pepe.next_stack": "NEXT STACK"
 }
