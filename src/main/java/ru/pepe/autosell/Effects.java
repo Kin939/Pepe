@@ -100,7 +100,7 @@ final class Effects {
         ring(0.16f, 0.72f, 0xFFFF787D, 0.5f);
     }
     static void villagerFinished() { COMBO.add(1); }
-    private static void comboStep(int step) {
+    static void comboStep(int step) {
         shownCombo = step;
         comboAge = 0;
         play("combo_" + shownCombo);

@@ -23,7 +23,7 @@ public final class Pepe implements ClientModInitializer {
     private final Seller seller = new Seller(highlights);
     private KeyMapping toggle;
     private boolean enabled;
-    private int smokeTicks;
+    private int smokeTicks, smokeFrames;
 
     @Override public void onInitializeClient() {
         instance = this;
@@ -35,6 +35,16 @@ public final class Pepe implements ClientModInitializer {
             return InteractionResult.PASS;
         });
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+        if (Boolean.getBoolean("pepe.smokeTest")) {
+            net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
+                if (screen instanceof TitleScreen) {
+                    net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterExtract(screen).register((current, graphics, mx, my, delta) -> {
+                        Effects.render(graphics);
+                        smokeFrames++;
+                    });
+                }
+            });
+        }
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(ID, "effects"), (graphics, delta) -> {
             if (enabled) Effects.render(graphics);
         });
@@ -63,11 +73,20 @@ public final class Pepe implements ClientModInitializer {
     }
 
     private void tick(Minecraft mc) {
-        // Opt-in CI startup check; no test behavior in normal launches.
-        if (Boolean.getBoolean("pepe.smokeTest") && mc.gui.screen() instanceof TitleScreen && ++smokeTicks >= 60) {
-            try { java.nio.file.Files.writeString(java.nio.file.Path.of("pepe-smoke-ok"), "Fabric client reached title screen"); }
-            catch (java.io.IOException e) { throw new IllegalStateException(e); }
-            mc.stop();
+        // Opt-in CI: exercise real HUD extraction, all effects and both flash paths.
+        if (Boolean.getBoolean("pepe.smokeTest") && mc.gui.screen() instanceof TitleScreen) {
+            smokeTicks++;
+            if (smokeTicks == 1) { Effects.clear(); Effects.beginVisuals(); Effects.sales(64); }
+            if (smokeTicks == 15) Effects.failedTrade();
+            if (smokeTicks == 35) Effects.comboStep(8);
+            Effects.tick();
+            if (smokeTicks >= 80 && smokeFrames >= 10) {
+                try { java.nio.file.Files.writeString(java.nio.file.Path.of("pepe-smoke-ok"),
+                        "Hype auto sell: title screen and animated HUD extracted successfully; frames=" + smokeFrames); }
+                catch (java.io.IOException e) { throw new IllegalStateException(e); }
+                Effects.clear();
+                mc.stop();
+            }
         }
         if (mc.player == null || mc.level == null) {
             if (enabled) disable(false);
